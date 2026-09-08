@@ -1,124 +1,108 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-node-id="NV1sj4N1NxNMkiQrbKB2KN">
-<head data-page-node-id="7soNp7NYlf8amjx8IdIDMJ">
-<meta charset="UTF-8" data-page-node-id="w3puOWcaeUTRKU7AmFUNSQ">
-<meta name="viewport" content="width=device-width,initial-scale=1" data-page-node-id="eSKhZkarf1jLS72pUnoFoO">
-<title>聚合后台 · Admin Console</title>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>聚合后台</title>
 <style>
-:root{--main:#2f6fed;--bg:#f5f7fa;--line:#e5e8ef;--txt:#222;--sub:#667}
+:root{--main:#2f6fed;--bg:#f5f7fa;--line:#e5e8ef;--sub:#667}
 *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI","Microsoft YaHei",sans-serif}
-body{background:var(--bg);min-height:100vh;color:var(--txt)}
-/* ===== 登录层 ===== */
+body{background:var(--bg);color:#222}
+/* 登录 */
 #login{display:flex;align-items:center;justify-content:center;min-height:100vh}
-.login-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:36px 32px;width:340px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
-.login-card h1{font-size:18px;margin-bottom:4px;text-align:center}
-.login-card p{font-size:12px;color:var(--sub);text-align:center;margin-bottom:20px}
-.login-card input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:12px;outline:none}
-.login-card input:focus{border-color:var(--main)}
-.login-card button{width:100%;padding:10px;border:none;border-radius:8px;background:var(--main);color:#fff;font-size:14px;cursor:pointer}
-#loginErr{color:#d33;font-size:12px;text-align:center;min-height:16px;margin-bottom:8px}
-/* ===== 主界面 ===== */
+.lc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:36px 32px;width:330px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+.lc h1{font-size:18px;text-align:center;margin-bottom:4px}
+.lc p{font-size:12px;color:var(--sub);text-align:center;margin-bottom:20px}
+.lc input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:12px;outline:none}
+.lc button{width:100%;padding:10px;border:none;border-radius:8px;background:var(--main);color:#fff;font-size:14px;cursor:pointer}
+#err{color:#d33;font-size:12px;text-align:center;min-height:16px;margin-bottom:8px}
+/* 主界面 */
 #app{display:none;flex-direction:column;height:100vh}
-.topbar{background:#fff;border-bottom:1px solid var(--line);padding:8px 16px;display:flex;align-items:center;gap:8px}
-.topbar b{font-size:14px;margin-right:6px}
-.tab{padding:6px 16px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:13px}
+.bar{background:#fff;border-bottom:1px solid var(--line);padding:8px 16px;display:flex;align-items:center;gap:8px}
+.bar b{font-size:14px;margin-right:6px}
+.tab{padding:6px 18px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:13px}
 .tab.on{background:var(--main);color:#fff;border-color:var(--main)}
-.topbar .sp{flex:1}
-.topbar .out{color:#d33;background:none;border:none;cursor:pointer;font-size:13px}
-.frame-wrap{flex:1;position:relative;background:#fff}
-.frame-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none;background:#fff}
-.load-tip{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--sub);background:#fff;z-index:5}
-.load-tip a{color:var(--main)}
+.bar .sp{flex:1}
+.bar .out{color:#d33;background:none;border:none;cursor:pointer;font-size:13px}
+.stage{flex:1;position:relative;background:#fff}
+.stage iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
+.msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:14px;background:#fff}
 </style>
 </head>
-<body data-page-node-id="ACfrQS34sUJtRis1MgeT4i">
+<body>
 
-<div id="login" data-page-node-id="v9aQmd3uPPe5KumqHHn37U">
-  <div class="login-card" data-page-node-id="8Wl3UQmzRVHJm4xdSLeGJt">
-    <h1 data-page-node-id="sBSfHCQHL3oExYHkmXzLXR">🔐 聚合后台</h1>
-    <p data-page-node-id="y1Nzfq7G5oLGMFMvRt0PTA">请输入账户密码登录</p>
-    <div id="loginErr" data-page-node-id="KcFHmNXwQRHpsF0bJxxqKS"></div>
-    <input id="u" placeholder="账户" autocomplete="username" data-page-node-id="IAEhGekkl0gMGhQljmhl2r">
-    <input id="p" type="password" placeholder="密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" data-page-node-id="hTNJ1X6y86HdiznlKJSrl5">
-    <button onclick="doLogin()" data-page-node-id="LM3ZHLww9PrrGacJzPw1rW">登 录</button>
+<div id="login">
+  <div class="lc">
+    <h1>🔐 聚合后台</h1>
+    <p>账户密码登录，一次进全部后台</p>
+    <div id="err"></div>
+    <input id="u" placeholder="账户" autocomplete="username">
+    <input id="p" type="password" placeholder="密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">登 录</button>
   </div>
 </div>
 
-<div id="app" data-page-node-id="3wY9qZqAnhA0kGYCZJ9oue">
-  <div class="topbar" data-page-node-id="ZqwbGso2BEi842oSwbxBvS">
-    <b data-page-node-id="Gzcy1DAsikDVxMZbAewHkA">聚合后台</b>
-    <button class="tab on" data-k="kb" onclick="switchTab('kb',this)" data-page-node-id="yGZC4A59VEDdWLdGAn4nSH">📚 知识库后台</button>
-    <button class="tab" data-k="muji" onclick="switchTab('muji',this)" data-page-node-id="0lBcpn4uJzmwuHOEMH4EQk">👕 MUJI 后台</button>
-    <span class="sp" data-page-node-id="NDYrwMQ23IQzDFKoDITqFd"></span>
-    <button class="out" onclick="logout()" data-page-node-id="Ervlp4GrXCDZQmkw3rj86W">退出登录</button>
+<div id="app">
+  <div class="bar">
+    <b>聚合后台</b>
+    <button class="tab on" data-k="kb" onclick="show('kb')">📚 知识库后台</button>
+    <button class="tab" data-k="muji" onclick="show('muji')">👕 MUJI 后台</button>
+    <span class="sp"></span>
+    <button class="out" onclick="logout()">退出登录</button>
   </div>
-  <div class="frame-wrap" data-page-node-id="DiXMIQZuUqCBjtNtFBcZj0">
-    <iframe id="f-kb" src="" hidden data-page-node-id="0KNhDsPc9fPDnTsBDhvO18"></iframe>
-    <iframe id="f-muji" src="" hidden data-page-node-id="6TD0GkTDEo8sWv7VgpTCPi"></iframe>
-    <div class="load-tip" id="tip" data-page-node-id="xXb4P3WiJeCOUCNYBBYN5D">
-      <div data-page-node-id="zf8aSP57u7MLfQc2wq11wY">页面加载中或被浏览器拦截…</div>
-      <div data-page-node-id="mLllTp2vwNKB3paJkvdiwe">如果长时间空白，<a id="tipLink" href="#" target="_blank" data-page-node-id="WTmN7vQQ3ClNlWS6CsnGVI">点这里新标签打开</a></div>
-    </div>
+  <div class="stage">
+    <iframe id="f-kb" hidden></iframe>
+    <iframe id="f-muji" hidden></iframe>
+    <div class="msg" id="msg">正在加载…</div>
   </div>
 </div>
 
 <script>
-var ADMIN_USER = "panhao";
-var ADMIN_PASS = "panhao123";
-var SS_KEY = "console_auth";
-var TARGETS = {
-  kb:   "/360-kb/admin.html",
-  muji: "/MUJI/admin.html"
-};
-function $(id){return document.getElementById(id)}
+var ADMIN_USER="panhao", ADMIN_PASS="panhao123";
+var SS="console_auth";
+var PAGES={ kb:"/360-kb/admin.html", muji:"/MUJI/admin.html" };
+var ready={};
+function $(i){return document.getElementById(i)}
 
 function doLogin(){
   if($("u").value.trim()===ADMIN_USER && $("p").value===ADMIN_PASS){
-    try{sessionStorage.setItem(SS_KEY,"1");sessionStorage.setItem("admin_auth","1")}catch(e){}
+    try{sessionStorage.setItem(SS,"1");sessionStorage.setItem("admin_auth","1")}catch(e){}
     enter();
-  }else{ $("loginErr").textContent="账户或密码错误"; }
+  }else $("err").textContent="账户或密码错误";
 }
-function logout(){ try{sessionStorage.removeItem(SS_KEY)}catch(e){} location.reload(); }
-function enter(){
-  $("login").style.display="none";
-  $("app").style.display="flex";
-  switchTab("kb", document.querySelector('.tab[data-k="kb"]'));
-}
+function logout(){ try{sessionStorage.clear()}catch(e){} location.reload(); }
+function enter(){ $("login").style.display="none"; $("app").style.display="flex"; show("kb"); }
 
-var loaded={};
-function switchTab(k, btn){
+/* 核心改动：fetch 抓后台源码，灌进 iframe.srcdoc，不依赖 iframe 自行加载 */
+var cache={};
+function show(k){
   document.querySelectorAll(".tab").forEach(function(b){b.classList.remove("on")});
-  btn.classList.add("on");
-  ["kb","muji"].forEach(function(x){
-    var f=$("f-"+x);
-    if(x===k){
-      f.hidden=false;
-      if(!f.src){ f.src=TARGETS[x]; watch(f,x); }
-      $("tip").style.display = loaded[x] ? "none" : "flex";
-      $("tipLink").href = TARGETS[x];
-    }else{
-      f.hidden=true;
-    }
-  });
+  document.querySelector('.tab[data-k="'+k+'"]').classList.add("on");
+  ["kb","muji"].forEach(function(x){ $("f-"+x).hidden = (x!==k); });
+  var f=$("f-"+k);
+  if(ready[k]) { $("msg").style.display="none"; return; }
+  $("msg").style.display="flex"; $("msg").textContent="正在加载"+(k==="kb"?"知识库":"MUJI")+"后台…";
+  if(cache[k]){ paint(f,cache[k],k); return; }
+  fetch(PAGES[k], {credentials:"same-origin"})
+    .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
+    .then(function(html){
+      cache[k]=html;
+      paint(f,html,k);
+    })
+    .catch(function(e){
+      $("msg").textContent="加载失败："+e.message+"（刷新重试）";
+    });
 }
-/* 8 秒没触发 load 就显示兜底提示；加载完自动把凭据传给后台免二次登录 */
-function watch(f,k){
-  f.addEventListener("load",function(){
-    loaded[k]=true;
-    if(!f.hidden) $("tip").style.display="none";
-    try{
-      f.contentWindow.postMessage({gateUser:ADMIN_USER,gatePass:ADMIN_PASS},"https://phgithum.github.io");
-    }catch(e){}
-    setTimeout(function(){
-      try{ f.contentWindow.postMessage({gateUser:ADMIN_USER,gatePass:ADMIN_PASS},"https://phgithum.github.io"); }catch(e){}
-    },1500);
+function paint(f,html,k){
+  f.srcdoc=html;
+  f.addEventListener("load",function once(){
+    f.removeEventListener("load",once);
+    ready[k]=true;
+    if(!$("f-"+k).hidden) $("msg").style.display="none";
   });
-  setTimeout(function(){
-    if(!loaded[k] && !f.hidden){ $("tip").style.display="flex"; $("tipLink").href=TARGETS[k]; }
-  },8000);
 }
 
-try{ if(sessionStorage.getItem(SS_KEY)==="1") enter(); }catch(e){}
+try{ if(sessionStorage.getItem(SS)==="1") enter(); }catch(e){}
 </script>
 </body>
 </html>
