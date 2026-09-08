@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="zh-CN" data-page-node-id="zdWcGgUIqclgcH6mdBzL7x">
+<head data-page-node-id="AgTaN3b0mX2AtBOaoTeMD0">
+<meta charset="UTF-8" data-page-node-id="YBBpdfS1mVI1Oc7BZCawGj">
+<meta name="viewport" content="width=device-width,initial-scale=1" data-page-node-id="qK60s4ZXRpMaG2KBIk7tgd">
 <title>聚合后台 · Admin Console</title>
 <style>
 :root{--main:#2f6fed;--bg:#f5f7fa;--line:#e5e8ef;--txt:#222;--sub:#667}
@@ -30,34 +30,46 @@ body{background:var(--bg);min-height:100vh;color:var(--txt)}
 .frame-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none;background:#fff}
 .empty-tip{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--sub)}
 .empty-tip a{color:var(--main);text-decoration:none;font-size:14px}
+.cards{display:flex;gap:24px;align-items:center;justify-content:center;flex:1;flex-wrap:wrap;padding:40px}
+.card2{background:#fff;border:1px solid var(--line);border-radius:14px;padding:36px 44px;text-align:center;text-decoration:none;color:var(--txt);box-shadow:0 4px 16px rgba(0,0,0,.05);transition:.15s}
+.card2:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(47,111,237,.15);border-color:var(--main)}
+.card2 .ic{font-size:42px;margin-bottom:12px}
+.card2 b{display:block;font-size:17px;margin-bottom:6px}
+.card2 span{font-size:12px;color:var(--sub)}
 </style>
 </head>
-<body>
+<body data-page-node-id="zGORcmBa61QWUm1Wb8rhI7">
 
 <!-- 登录 -->
-<div id="login">
-  <div class="login-card">
-    <h1>🔐 聚合后台</h1>
-    <p>请输入账户密码登录</p>
-    <div id="loginErr"></div>
-    <input id="u" placeholder="账户" autocomplete="username">
-    <input id="p" type="password" placeholder="密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
-    <button onclick="doLogin()">登 录</button>
+<div id="login" data-page-node-id="ehIMpyjuJuM4YCsybQ9A9c">
+  <div class="login-card" data-page-node-id="fXGFbls0AQEGFLCRlnwfEc">
+    <h1 data-page-node-id="F3YOXQT9dhwpGGOQFGvW8w">🔐 聚合后台</h1>
+    <p data-page-node-id="xXr03upblAsRvWD7z8PBBf">请输入账户密码登录</p>
+    <div id="loginErr" data-page-node-id="0ZEVnwm7J8UtJoi8O8Ht2n"></div>
+    <input id="u" placeholder="账户" autocomplete="username" data-page-node-id="5jVi8YkAavHux2wX0M0MkS">
+    <input id="p" type="password" placeholder="密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" data-page-node-id="WE7HqZMLZBY2mnZpOypyhc">
+    <button onclick="doLogin()" data-page-node-id="sKUk9eqTWoRedODFqgUD33">登 录</button>
   </div>
 </div>
 
 <!-- 主界面 -->
-<div id="app">
-  <div class="topbar">
-    <b>聚合后台</b>
-    <button class="tab on" data-k="kb" onclick="switchTab('kb',this)">📚 知识库后台</button>
-    <button class="tab" data-k="muji" onclick="switchTab('muji',this)">👕 MUJI 后台</button>
-    <span class="sp"></span>
-    <button class="out" onclick="logout()">退出登录</button>
+<div id="app" data-page-node-id="eMIalHRbkX3OLjk7TLNIx5">
+  <div class="topbar" data-page-node-id="UppwkjTttX48yQvJA93LuS">
+    <b data-page-node-id="hFOHY1EHHMzxwlPdcbV7H4">聚合后台</b>
+    <button class="tab on" data-k="kb" onclick="openTarget('kb')" data-page-node-id="9fsnwm0EmjSlnQt3Qcc7qj">📚 知识库后台</button>
+    <button class="tab" data-k="muji" onclick="openTarget('muji')" data-page-node-id="vbwRrdUc8erHGf0oGrfH9U">👕 MUJI 后台</button>
+    <span class="sp" data-page-node-id="1DNaB7ghyzMGrgg7KMXJBG"></span>
+    <button class="out" onclick="logout()" data-page-node-id="i5MqOhTnIhDuV375irdIv1">退出登录</button>
   </div>
-  <div class="frame-wrap" id="frames">
-    <iframe id="f-kb" src="" hidden></iframe>
-    <iframe id="f-muji" src="" hidden></iframe>
+  <div class="frame-wrap" id="frames" data-page-node-id="lKTUhlwM0OFOd7qPvDrRV5">
+    <div class="cards">
+      <a class="card2" id="c-kb" href="#" target="_blank" rel="noopener">
+        <div class="ic">📚</div><b>知识库后台</b><span>360 检索台配置 / 发布 / 统计</span>
+      </a>
+      <a class="card2" id="c-muji" href="#" target="_blank" rel="noopener">
+        <div class="ic">👕</div><b>MUJI 后台</b><span>MUJI 知识库配置 / 发布</span>
+      </a>
+    </div>
   </div>
 </div>
 
@@ -84,10 +96,15 @@ function doLogin(){
     try{sessionStorage.setItem(SS_KEY,"1")}catch(e){}
     $("login").style.display="none";
     $("app").style.display="flex";
-    switchTab("kb", document.querySelector('.tab[data-k="kb"]'));
+    bindCards();
   }else{
     $("loginErr").textContent="账户或密码错误";
   }
+}
+
+function bindCards(){
+  $("c-kb").href = TARGETS.kb;
+  $("c-muji").href = TARGETS.muji;
 }
 
 function logout(){
@@ -95,18 +112,8 @@ function logout(){
   location.reload();
 }
 
-function switchTab(k, btn){
-  document.querySelectorAll(".tab").forEach(function(b){b.classList.remove("on")});
-  btn.classList.add("on");
-  ["kb","muji"].forEach(function(x){
-    var f=$("f-"+x);
-    if(x===k){
-      if(!f.src) f.src=TARGETS[x];
-      f.hidden=false;
-    }else{
-      f.hidden=true;
-    }
-  });
+function openTarget(k){
+  window.open(TARGETS[k], "_blank", "noopener");
 }
 
 /* 已登录则直接进 */
@@ -114,7 +121,7 @@ try{
   if(sessionStorage.getItem(SS_KEY)==="1"){
     $("login").style.display="none";
     $("app").style.display="flex";
-    switchTab("kb", document.querySelector('.tab[data-k="kb"]'));
+    bindCards();
   }
 }catch(e){}
 </script>
