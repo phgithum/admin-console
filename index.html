@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>聚合后台 · Admin Console</title>
+<style>
+:root{--main:#2f6fed;--bg:#f5f7fa;--line:#e5e8ef;--txt:#222;--sub:#667}
+*{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI","Microsoft YaHei",sans-serif}
+body{background:var(--bg);min-height:100vh;color:var(--txt)}
+/* ===== 登录层 ===== */
+#login{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.login-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:36px 32px;width:340px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+.login-card h1{font-size:18px;margin-bottom:4px;text-align:center}
+.login-card p{font-size:12px;color:var(--sub);text-align:center;margin-bottom:20px}
+.login-card input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:12px;outline:none}
+.login-card input:focus{border-color:var(--main)}
+.login-card button{width:100%;padding:10px;border:none;border-radius:8px;background:var(--main);color:#fff;font-size:14px;cursor:pointer}
+.login-card button:hover{opacity:.92}
+#loginErr{color:#d33;font-size:12px;text-align:center;min-height:16px;margin-bottom:8px}
+/* ===== 主界面 ===== */
+#app{display:none;flex-direction:column;height:100vh}
+.topbar{background:#fff;border-bottom:1px solid var(--line);padding:10px 20px;display:flex;align-items:center;gap:10px}
+.topbar b{font-size:15px}
+.tab{padding:6px 16px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:13px}
+.tab.on{background:var(--main);color:#fff;border-color:var(--main)}
+.topbar .sp{flex:1}
+.topbar .out{color:#d33;background:none;border:none;cursor:pointer;font-size:13px}
+.frame-wrap{flex:1;position:relative}
+.frame-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none;background:#fff}
+.empty-tip{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--sub)}
+.empty-tip a{color:var(--main);text-decoration:none;font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- 登录 -->
+<div id="login">
+  <div class="login-card">
+    <h1>🔐 聚合后台</h1>
+    <p>请输入账户密码登录</p>
+    <div id="loginErr"></div>
+    <input id="u" placeholder="账户" autocomplete="username">
+    <input id="p" type="password" placeholder="密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">登 录</button>
+  </div>
+</div>
+
+<!-- 主界面 -->
+<div id="app">
+  <div class="topbar">
+    <b>聚合后台</b>
+    <button class="tab on" data-k="kb" onclick="switchTab('kb',this)">📚 知识库后台</button>
+    <button class="tab" data-k="muji" onclick="switchTab('muji',this)">👕 MUJI 后台</button>
+    <span class="sp"></span>
+    <button class="out" onclick="logout()">退出登录</button>
+  </div>
+  <div class="frame-wrap" id="frames">
+    <iframe id="f-kb" src="" hidden></iframe>
+    <iframe id="f-muji" src="" hidden></iframe>
+  </div>
+</div>
+
+<script>
+/* =====================================================
+ *  账户密码在这里改（改完 GitHub 上保存即可生效）
+ * ===================================================== */
+var ADMIN_USER = "panhao";
+var ADMIN_PASS = "panhao123";
+
+/* 各后台地址（GitHub Pages 稳定入口） */
+var TARGETS = {
+  kb:   "https://phgithum.github.io/360-kb/admin.html",
+  muji: "https://phgithum.github.io/MUJI/admin.html"
+};
+
+var SS_KEY = "console_auth";
+
+function $(id){return document.getElementById(id)}
+
+function doLogin(){
+  var u=$("u").value.trim(), p=$("p").value;
+  if(u===ADMIN_USER && p===ADMIN_PASS){
+    try{sessionStorage.setItem(SS_KEY,"1")}catch(e){}
+    $("login").style.display="none";
+    $("app").style.display="flex";
+    switchTab("kb", document.querySelector('.tab[data-k="kb"]'));
+  }else{
+    $("loginErr").textContent="账户或密码错误";
+  }
+}
+
+function logout(){
+  try{sessionStorage.removeItem(SS_KEY)}catch(e){}
+  location.reload();
+}
+
+function switchTab(k, btn){
+  document.querySelectorAll(".tab").forEach(function(b){b.classList.remove("on")});
+  btn.classList.add("on");
+  ["kb","muji"].forEach(function(x){
+    var f=$("f-"+x);
+    if(x===k){
+      if(!f.src) f.src=TARGETS[x];
+      f.hidden=false;
+    }else{
+      f.hidden=true;
+    }
+  });
+}
+
+/* 已登录则直接进 */
+try{
+  if(sessionStorage.getItem(SS_KEY)==="1"){
+    $("login").style.display="none";
+    $("app").style.display="flex";
+    switchTab("kb", document.querySelector('.tab[data-k="kb"]'));
+  }
+}catch(e){}
+</script>
+</body>
+</html>
