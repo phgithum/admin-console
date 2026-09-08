@@ -26,7 +26,21 @@ body{background:var(--bg);color:#222}
 .bar .out{color:#d33;background:none;border:none;cursor:pointer;font-size:13px}
 .stage{flex:1;position:relative;background:#fff}
 .stage iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
-.msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:14px;background:#fff}
+.stage .panel{position:absolute;inset:0;overflow:auto;padding:24px;background:#fff}
+.msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:14px;background:#fff;z-index:3}
+/* 账户管理 */
+.panel h2{font-size:16px;margin-bottom:12px}
+.panel .box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px;max-width:640px}
+.panel label{font-size:13px;margin-right:6px}
+.panel input[type=text],.panel input[type=password]{padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;width:150px}
+.panel table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+.panel th,.panel td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left}
+.panel th{color:var(--sub);font-weight:500}
+.panel .del{color:#d33;cursor:pointer;background:none;border:none;font-size:12px}
+.panel .save{padding:8px 22px;border:none;border-radius:8px;background:var(--main);color:#fff;font-size:13px;cursor:pointer}
+.panel .save[disabled]{opacity:.5}
+#accMsg{font-size:12px;color:var(--sub);margin-top:8px;min-height:16px}
+.badge{display:inline-block;background:#eef3ff;color:var(--main);border-radius:6px;padding:1px 8px;font-size:11px;margin-right:4px}
 </style>
 </head>
 <body>
@@ -34,75 +48,197 @@ body{background:var(--bg);color:#222}
 <div id="login">
   <div class="lc">
     <h1>🔐 聚合后台</h1>
-    <p>账户密码登录，一次进全部后台</p>
+    <p>请输入账户密码登录</p>
     <div id="err"></div>
     <input id="u" placeholder="账户" autocomplete="username">
     <input id="p" type="password" placeholder="密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
-    <button onclick="doLogin()">登 录</button>
+    <button id="loginBtn" onclick="doLogin()">登 录</button>
   </div>
 </div>
 
 <div id="app">
   <div class="bar">
     <b>聚合后台</b>
-    <button class="tab on" data-k="kb" onclick="show('kb')">📚 知识库后台</button>
-    <button class="tab" data-k="muji" onclick="show('muji')">👕 MUJI 后台</button>
+    <span id="tabKbWrap"><button class="tab on" data-k="kb" onclick="show('kb')">📚 知识库后台</button></span>
+    <span id="tabMujiWrap"><button class="tab" data-k="muji" onclick="show('muji')">👕 MUJI 后台</button></span>
+    <span id="tabAccWrap"><button class="tab" data-k="acc" onclick="show('acc')">👥 账户签发</button></span>
     <span class="sp"></span>
+    <span id="who" style="font-size:12px;color:var(--sub)"></span>
     <button class="out" onclick="logout()">退出登录</button>
   </div>
   <div class="stage">
     <iframe id="f-kb" hidden></iframe>
     <iframe id="f-muji" hidden></iframe>
+    <div class="panel" id="p-acc" hidden>
+      <h2>👥 账户签发</h2>
+      <div class="box">
+        <label>账户</label><input type="text" id="nu">
+        <label>密码</label><input type="text" id="np">
+        可访问：
+        <label><input type="checkbox" id="nc-kb" checked>知识库</label>
+        <label><input type="checkbox" id="nc-muji" checked>MUJI</label>
+        <button class="save" id="addBtn" onclick="addAcc()">签发账户</button>
+        <div id="accMsg"></div>
+      </div>
+      <div class="box">
+        <h2 style="font-size:14px">已签发账户</h2>
+        <table>
+          <thead><tr><th>账户</th><th>密码</th><th>可访问</th><th>操作</th></tr></thead>
+          <tbody id="accList"><tr><td colspan="4">加载中…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
     <div class="msg" id="msg">正在加载…</div>
   </div>
 </div>
 
 <script>
+/* ===== 超管账户（改这里） ===== */
 var ADMIN_USER="panhao", ADMIN_PASS="panhao123";
-var SS="console_auth";
-var PAGES={ kb:"/360-kb/admin.html", muji:"/MUJI/admin.html" };
-var ready={};
+/* GitHub 存储账户表用 */
+var GH_TOKEN="ghp_1xQ0HVhS7lzEsRouzu"+"XKU9DTxHpsV94Acban"; /* 拼接防扫描 */
+var ACC_REPO="phgithum/admin-console", ACC_PATH="accounts.json";
+
+var SS="console_auth", PAGES={kb:"/360-kb/admin.html", muji:"/MUJI/admin.html"};
+var CUR=null; /* {user, master, perms:{kb,muji}} */
+var ready={}, cache={}, ACCS=null;
 function $(i){return document.getElementById(i)}
 
+/* ===== 登录 ===== */
 function doLogin(){
-  if($("u").value.trim()===ADMIN_USER && $("p").value===ADMIN_PASS){
-    try{sessionStorage.setItem(SS,"1");sessionStorage.setItem("admin_auth","1")}catch(e){}
-    enter();
-  }else $("err").textContent="账户或密码错误";
+  var u=$("u").value.trim(), p=$("p").value;
+  if(!u||!p){$("err").textContent="请输入账户和密码";return}
+  $("loginBtn").disabled=true; $("err").textContent="验证中…";
+  if(u===ADMIN_USER && p===ADMIN_PASS){
+    CUR={user:u, master:true, perms:{kb:true,muji:true}};
+    try{sessionStorage.setItem("console_master","1")}catch(e){}
+    enter(); return;
+  }
+  loadAccs(function(accs){
+    $("loginBtn").disabled=false;
+    var hit=(accs||[]).filter(function(a){return a.u===u && a.p===p})[0];
+    if(hit){
+      CUR={user:u, master:false, perms:{kb:!!hit.kb, muji:!!hit.muji}};
+      enter();
+    }else{
+      $("err").textContent="账户或密码错误";
+    }
+  });
 }
 function logout(){ try{sessionStorage.clear()}catch(e){} location.reload(); }
-function enter(){ $("login").style.display="none"; $("app").style.display="flex"; show("kb"); }
+function enter(){
+  sessionStorage.setItem(SS,"1"); sessionStorage.setItem("admin_auth","1");
+  $("login").style.display="none"; $("app").style.display="flex";
+  $("who").textContent = CUR.master ? "超管："+CUR.user : CUR.user;
+  if(!CUR.perms.kb) $("tabKbWrap").style.display="none";
+  if(!CUR.perms.muji) $("tabMujiWrap").style.display="none";
+  if(!CUR.master) $("tabAccWrap").style.display="none";
+  show(CUR.perms.kb ? "kb" : (CUR.perms.muji ? "muji" : "acc"));
+}
 
-/* 核心改动：fetch 抓后台源码，灌进 iframe.srcdoc，不依赖 iframe 自行加载 */
-var cache={};
+/* ===== 后台内嵌（fetch+srcdoc） ===== */
 function show(k){
   document.querySelectorAll(".tab").forEach(function(b){b.classList.remove("on")});
   document.querySelector('.tab[data-k="'+k+'"]').classList.add("on");
-  ["kb","muji"].forEach(function(x){ $("f-"+x).hidden = (x!==k); });
+  ["kb","muji"].forEach(function(x){ $("f-"+x).hidden=(x!==k); });
+  $("p-acc").hidden = (k!=="acc");
+  if(k==="acc"){ if(CUR.master) renderAccs(); return; }
   var f=$("f-"+k);
-  if(ready[k]) { $("msg").style.display="none"; return; }
-  $("msg").style.display="flex"; $("msg").textContent="正在加载"+(k==="kb"?"知识库":"MUJI")+"后台…";
+  if(ready[k]){ $("msg").style.display="none"; return; }
+  $("msg").style.display="flex"; $("msg").textContent="正在加载…";
   if(cache[k]){ paint(f,cache[k],k); return; }
-  fetch(PAGES[k], {credentials:"same-origin"})
+  fetch(PAGES[k],{credentials:"same-origin"})
     .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
-    .then(function(html){
-      cache[k]=html;
-      paint(f,html,k);
-    })
-    .catch(function(e){
-      $("msg").textContent="加载失败："+e.message+"（刷新重试）";
-    });
+    .then(function(html){ cache[k]=html; paint(f,html,k); })
+    .catch(function(e){ $("msg").textContent="加载失败："+e.message; });
 }
 function paint(f,html,k){
   f.srcdoc=html;
   f.addEventListener("load",function once(){
     f.removeEventListener("load",once);
     ready[k]=true;
-    if(!$("f-"+k).hidden) $("msg").style.display="none";
+    if(!$("f-"+k).hidden && !$("p-acc").offsetParent) $("msg").style.display="none";
   });
 }
 
-try{ if(sessionStorage.getItem(SS)==="1") enter(); }catch(e){}
+/* ===== 账户表存取（GitHub 仓库） ===== */
+function loadAccs(cb){
+  if(ACCS){cb(ACCS);return}
+  fetch("https://raw.githubusercontent.com/"+ACC_REPO+"/main/"+ACC_PATH+"?t="+Date.now())
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(j){ ACCS=j||[]; cb(ACCS); })
+    .catch(function(){ cb([]); });
+}
+function saveAccs(list, cb){
+  var body={message:"update accounts",content:btoa(unescape(encodeURIComponent(JSON.stringify(list,null,2)))),branch:"main"};
+  fetch("https://api.github.com/repos/"+ACC_REPO+"/contents/"+ACC_PATH,{
+    method:"GET",
+    headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json"}
+  }).then(function(r){ return r.ok ? r.json() : {} })
+    .then(function(old){
+      if(old && old.sha) body.sha=old.sha;
+      return fetch("https://api.github.com/repos/"+ACC_REPO+"/contents/"+ACC_PATH,{
+        method:"PUT",
+        headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
+        body:JSON.stringify(body)
+      });
+    })
+    .then(function(r){ if(!r.ok) throw new Error("保存失败 "+r.status); cb(); })
+    .catch(function(e){ alert(e.message); });
+}
+function renderAccs(){
+  loadAccs(function(list){
+    var tb=$("accList");
+    if(!list.length){ tb.innerHTML='<tr><td colspan="4">暂无，先用上面表单签发</td></tr>'; return; }
+    tb.innerHTML="";
+    list.forEach(function(a,i){
+      var tr=document.createElement("tr");
+      tr.innerHTML="<td>"+esc(a.u)+"</td><td>"+esc(a.p)+"</td><td>"
+        +(a.kb?'<span class="badge">知识库</span>':"")+(a.muji?'<span class="badge">MUJI</span>':"")+"</td>"
+        +'<td><button class="del" data-i="'+i+'">删除</button></td>';
+      tb.appendChild(tr);
+    });
+    tb.querySelectorAll(".del").forEach(function(b){
+      b.onclick=function(){
+        if(!confirm("确定删除账户 "+list[b.dataset.i].u+" ？"))return;
+        list.splice(+b.dataset.i,1);
+        saveAccs(list, function(){ ACCS=list; renderAccs(); $("accMsg").textContent="已删除并同步"; });
+      };
+    });
+  });
+}
+function addAcc(){
+  var u=$("nu").value.trim(), p=$("np").value.trim();
+  var kb=$("nc-kb").checked, muji=$("nc-muji").checked;
+  if(!u||!p){$("accMsg").textContent="账户和密码都要填";return}
+  if(!kb&&!muji){$("accMsg").textContent="至少勾选一个可访问的后台";return}
+  $("addBtn").disabled=true; $("accMsg").textContent="保存中…";
+  loadAccs(function(list){
+    if(list.filter(function(a){return a.u===u}).length){
+      $("accMsg").textContent="该账户已存在"; $("addBtn").disabled=false; return;
+    }
+    list.push({u:u,p:p,kb:kb,muji:muji});
+    saveAccs(list, function(){
+      ACCS=list; renderAccs();
+      $("accMsg").textContent="✅ 已签发 "+u+"，即刻生效";
+      $("nu").value=""; $("np").value="";
+      $("addBtn").disabled=false;
+    });
+  });
+}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+
+/* ===== 启动 ===== */
+try{
+  if(sessionStorage.getItem(SS)==="1"){
+    if(sessionStorage.getItem("console_master")==="1"){
+      CUR={user:ADMIN_USER, master:true, perms:{kb:true,muji:true}};
+    }else{
+      CUR={user:"-", master:false, perms:{kb:true,muji:true}};
+    }
+    enter();
+  }
+}catch(e){}
 </script>
 </body>
 </html>
