@@ -101,13 +101,20 @@ function switchTab(k, btn){
     }
   });
 }
-/* 8 秒没触发 load 就显示兜底提示 */
+/* 8 秒没触发 load 就显示兜底提示；加载完自动把凭据传给后台免二次登录 */
 function watch(f,k){
-  var done=false;
-  f.addEventListener("load",function(){ done=true; loaded[k]=true;
-    if(!f.hidden) $("tip").style.display="none"; });
+  f.addEventListener("load",function(){
+    loaded[k]=true;
+    if(!f.hidden) $("tip").style.display="none";
+    try{
+      f.contentWindow.postMessage({gateUser:ADMIN_USER,gatePass:ADMIN_PASS},"https://phgithum.github.io");
+    }catch(e){}
+    setTimeout(function(){
+      try{ f.contentWindow.postMessage({gateUser:ADMIN_USER,gatePass:ADMIN_PASS},"https://phgithum.github.io"); }catch(e){}
+    },1500);
+  });
   setTimeout(function(){
-    if(!done && !f.hidden){ $("tip").style.display="flex"; $("tipLink").href=TARGETS[k]; }
+    if(!loaded[k] && !f.hidden){ $("tip").style.display="flex"; $("tipLink").href=TARGETS[k]; }
   },8000);
 }
 
