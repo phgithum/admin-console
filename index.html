@@ -67,14 +67,14 @@ var ADMIN_USER = "panhao";
 var ADMIN_PASS = "panhao123";
 var SS_KEY = "console_auth";
 var TARGETS = {
-  kb:   "https://phgithum.github.io/360-kb/admin.html",
-  muji: "https://phgithum.github.io/MUJI/admin.html"
+  kb:   "/360-kb/admin.html",
+  muji: "/MUJI/admin.html"
 };
 function $(id){return document.getElementById(id)}
 
 function doLogin(){
   if($("u").value.trim()===ADMIN_USER && $("p").value===ADMIN_PASS){
-    try{sessionStorage.setItem(SS_KEY,"1")}catch(e){}
+    try{sessionStorage.setItem(SS_KEY,"1");sessionStorage.setItem("admin_auth","1")}catch(e){}
     enter();
   }else{ $("loginErr").textContent="账户或密码错误"; }
 }
