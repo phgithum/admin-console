@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>实时渲染器</title>
+<style>
+:root{--main:#2f6fed;--bg:#f5f7fa;--line:#e5e8ef;--sub:#667}
+*{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI","Microsoft YaHei",sans-serif}
+body{background:var(--bg);color:#222;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+/* 登录门 */
+#fg{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center}
+.fgc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:36px 32px;width:330px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+.fgc h2{font-size:18px;text-align:center;margin-bottom:4px}
+.fgc p{font-size:12px;color:var(--sub);text-align:center;margin-bottom:20px}
+.fgc input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:12px;outline:none}
+.fgc button{width:100%;padding:10px;border:none;border-radius:8px;background:var(--main);color:#fff;font-size:14px;cursor:pointer}
+#fgErr{color:#d33;font-size:12px;text-align:center;min-height:16px;margin-bottom:8px}
+/* 工具栏 */
+.bar{background:#fff;border-bottom:1px solid var(--line);padding:8px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bar b{font-size:14px;margin-right:4px}
+.tab{padding:5px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:13px}
+.tab.on{background:var(--main);color:#fff;border-color:var(--main)}
+.bar input[type=text]{flex:1;min-width:220px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;outline:none}
+.btn{padding:5px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:13px}
+.btn.pri{background:var(--main);color:#fff;border-color:var(--main)}
+.btn.on{background:#eef3ff;color:var(--main);border-color:var(--main)}
+#urlBox{display:flex;gap:8px;flex:1;align-items:center}
+/* 主体 */
+.stage{flex:1;position:relative;background:#e9edf3;overflow:hidden}
+.phone{position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);background:#fff;box-shadow:0 0 20px rgba(0,0,0,.15);overflow:hidden}
+.phone iframe{width:100%;height:100%;border:none;background:#fff}
+.phone textarea{width:100%;height:100%;border:none;resize:none;padding:14px;font:12px/1.6 Consolas,monospace;outline:none;background:#fffef7}
+.hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:var(--sub);font-size:13px;text-align:center;pointer-events:none}
+</style>
+</head>
+<body>
+
+<!-- 登录 -->
+<div id="fg">
+  <div class="fgc">
+    <h2>🔐 实时渲染器</h2>
+    <p>请输入账户密码（任意已签发账户可用）</p>
+    <div id="fgErr"></div>
+    <input id="gu" placeholder="账户">
+    <input id="gp" type="password" placeholder="密码" onkeydown="if(event.key==='Enter')fgLogin()">
+    <button onclick="fgLogin()">进 入</button>
+  </div>
+</div>
+
+<!-- 工具栏 -->
+<div class="bar">
+  <b>🎨 实时渲染器</b>
+  <button class="tab on" id="mUrl" onclick="mode('url')">网址模式</button>
+  <button class="tab" id="mCode" onclick="mode('code')">代码模式</button>
+  <span id="urlBox">
+    <input type="text" id="url" placeholder="粘贴网页地址，如 https://phgithum.github.io/360-kb/" onkeydown="if(event.key==='Enter')loadUrl()">
+    <button class="btn pri" onclick="loadUrl()">渲染</button>
+  </span>
+  <span id="devBtns" style="display:none;gap:6px">
+    <button class="btn on" data-w="0" onclick="setW(this)">自适应</button>
+    <button class="btn" data-w="390" onclick="setW(this)">手机</button>
+    <button class="btn" data-w="768" onclick="setW(this)">平板</button>
+    <button class="btn" data-w="1280" onclick="setW(this)">桌面</button>
+  </span>
+  <button class="btn" onclick="location.reload()">↻ 刷新</button>
+</div>
+
+<!-- 舞台 -->
+<div class="stage" id="stage">
+  <div class="phone" id="phone">
+    <iframe id="view" hidden></iframe>
+    <textarea id="code" hidden spellcheck="false" placeholder="<!-- 在这里粘贴或编写 HTML，松手 0.6 秒后自动渲染 -->&#10;&#10;<h1>Hello</h1>"></textarea>
+    <div class="hint" id="hint">输入网址或切到「代码模式」开始</div>
+  </div>
+</div>
+
+<script>
+var SS="render_auth";
+function $(i){return document.getElementById(i)}
+
+/* ===== 登录：签发账户（任一权限）或超管 ===== */
+var ACCS=null;
+(function(){
+  var ok=false;
+  try{ ok = sessionStorage.getItem("admin_auth")==="1" || sessionStorage.getItem(SS)==="1"; }catch(e){}
+  if(ok){ $("fg").remove(); return; }
+  fetch("https://raw.githubusercontent.com/phgithum/admin-console/main/accounts.json?t="+Date.now())
+    .then(function(r){return r.ok?r.json():[]}).catch(function(){return[]})
+    .then(function(j){ACCS=j||[];});
+  $("gp").addEventListener("keydown",function(e){if(e.key==="Enter")fgLogin()});
+})();
+function fgLogin(){
+  var u=$("gu").value.trim(), p=$("gp").value;
+  function pass(){ try{sessionStorage.setItem(SS,"1")}catch(e){} $("fg").remove(); }
+  if(u==="panhao"&&p==="panhao123"){pass();return}
+  var hit=(ACCS||[]).filter(function(a){return a.u===u&&a.p===p&&(a.kb||a.muji)})[0];
+  if(hit){pass();return}
+  $("fgErr").textContent="账户或密码错误";
+}
+
+/* ===== 模式切换 ===== */
+var cur="url", W=0;
+function mode(m){
+  cur=m;
+  $("mUrl").classList.toggle("on",m==="url");
+  $("mCode").classList.toggle("on",m==="code");
+  $("urlBox").style.display = m==="url"?"flex":"none";
+  $("devBtns").style.display = m==="code"?"flex":"none";
+  $("code").hidden = m!=="code";
+  $("view").hidden = m==="code" ? false : !$("view").src;
+  $("hint").style.display = m==="code"?"none":"flex";
+  if(m==="code"){
+    W=768; applyW(); autoRender();
+  }else{
+    W=0; applyW();
+    if($("view").src) $("view").hidden=false;
+  }
+}
+
+/* ===== 网址模式 ===== */
+function loadUrl(){
+  var u=$("url").value.trim();
+  if(!u)return;
+  if(!/^https?:\/\//.test(u)) u="https://"+u;
+  $("view").src=u; $("view").hidden=false; $("hint").style.display="none";
+  /* 部分网站禁止被嵌入，10 秒没显示就提示 */
+  clearTimeout(loadUrl._t);
+  loadUrl._t=setTimeout(function(){
+    $("hint").style.display="flex";
+    $("hint").innerHTML="如果一直空白，说明该网站禁止被嵌入（如百度、淘宝）<br>换 GitHub Pages / EdgeOne 的链接即可";
+  },10000);
+}
+$("view").addEventListener("load",function(){
+  clearTimeout(loadUrl._t);
+  $("hint").style.display="none";
+});
+
+/* ===== 代码模式（防抖实时渲染） ===== */
+var rt=null;
+$("code").addEventListener("input",function(){
+  clearTimeout(rt); rt=setTimeout(renderCode,600);
+});
+function autoRender(){ if($("code").value.trim()) renderCode(); }
+function renderCode(){
+  $("view").srcdoc=$("code").value;
+  $("view").hidden=false;
+  $("hint").style.display="none";
+}
+
+/* ===== 宽度预设 ===== */
+function setW(btn){
+  document.querySelectorAll("#devBtns .btn").forEach(function(b){b.classList.remove("on")});
+  btn.classList.add("on");
+  W=+btn.dataset.w; applyW();
+}
+function applyW(){
+  var p=$("phone");
+  p.style.width = W? W+"px" : "100%";
+  p.style.transform = W? "translateX(-50%)" : "none";
+  p.style.left = W? "50%" : "0";
+}
+</script>
+</body>
+</html>
