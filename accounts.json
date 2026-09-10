@@ -5,5 +5,12 @@
     "kb": true,
     "muji": true,
     "quiz": true
+  },
+  {
+    "u": "test",
+    "p": "test",
+    "kb": false,
+    "muji": false,
+    "quiz": true
   }
 ]
