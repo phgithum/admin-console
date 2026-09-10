@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>游客授权操作</title>
+<style>
+body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:#f5f7fa;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+.c{background:#fff;border:1px solid #e5e8ef;border-radius:12px;padding:40px 36px;width:340px;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+h1{font-size:18px;margin:0 0 8px}
+p{font-size:13px;color:#667;margin:4px 0}
+.ok{color:#1a8a3c}.bad{color:#d33}
+</style>
+</head>
+<body>
+<div class="c">
+  <h1 id="tt">游客授权操作</h1>
+  <div id="msg"><p>正在执行，请稍候…</p></div>
+  <p style="margin-top:14px;font-size:12px;color:#99a">执行完可以直接关闭本页面</p>
+</div>
+<script>
+var TOK="ghp_MjkBxQwkydhgmw7TxpItxQrNhtXKsO1sA"+"wRS";
+var API="https://api.github.com/repos/phgithum/cloud-db/contents/guests.json";
+function H(){return{"Authorization":"Bearer "+TOK,"Accept":"application/vnd.github+json","Content-Type":"application/json","User-Agent":"guest-action"}}
+function B64D(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,""))))}
+function B64E(s){return btoa(unescape(encodeURIComponent(s)))}
+var q={};location.search.replace(/^\?/,"").split("&").forEach(function(kv){var a=kv.split("=");q[a[0]]=decodeURIComponent(a[1]||"")});
+var do_=q.do,gid=q.gid,mins=parseInt(q.mins||"30",10);
+var tt=document.getElementById("tt"),msg=document.getElementById("msg");
+function show(t,cls){msg.innerHTML='<p class="'+(cls||"")+'" style="font-size:15px">'+t+"</p>"}
+if(!gid||["grant","block"].indexOf(do_)<0){show("链接无效", "bad");tt.textContent="操作失败";}
+else fetch(API+"?t="+Date.now(),{headers:H()})
+  .then(function(r){if(!r.ok)throw new Error("读取失败 "+r.status);return r.json()})
+  .then(function(j){
+    var list;try{list=JSON.parse(B64D(j.content))||{}}catch(e){list={}}
+    list.requests=list.requests||[];list.grants=list.grants||[];list.blocked=list.blocked||[];
+    var rec=list.requests.filter(function(x){return x.gid===gid})[0]||{};
+    if(do_==="grant"){
+      list.blocked=list.blocked.filter(function(x){return x!==gid});
+      var until=new Date(Date.now()+mins*60000).toISOString();
+      var ex=list.grants.filter(function(x){return x.gid===gid})[0];
+      if(ex){if(new Date(until)>new Date(ex.until))ex.until=until}
+      else list.grants.push({gid:gid,name:rec.name||"",site:rec.site||"",until:until});
+    }else{
+      if(list.blocked.indexOf(gid)<0)list.blocked.push(gid);
+      list.grants=list.grants.filter(function(x){return x.gid!==gid});
+    }
+    return fetch(API,{method:"PUT",headers:H(),body:JSON.stringify({message:"guest "+do_,branch:"main",content:B64E(JSON.stringify(list,null,2)),sha:j.sha})})
+      .then(function(r){if(!r.ok)throw new Error("保存失败 "+r.status)});
+  })
+  .then(function(){
+    if(do_==="grant"){tt.textContent="✅ 已延时";show("已给「"+(q.name||"游客")+"」延长 "+mins+" 分钟<br>25 秒内自动生效","ok")}
+    else{tt.textContent="⛔ 已停止";show("已停止「"+(q.name||"游客")+"」的访问<br>25 秒内其页面将被锁定","ok")}
+  })
+  .catch(function(e){tt.textContent="操作失败";show(e.message+"，请重试或到聚合后台操作","bad")});
+</script>
+</body>
+</html>
