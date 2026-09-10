@@ -10,6 +10,9 @@ body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:#f5f7fa;disp
 h1{font-size:18px;margin:0 0 8px}
 p{font-size:13px;color:#667;margin:4px 0}
 .ok{color:#1a8a3c}.bad{color:#d33}
+select{width:100%;padding:10px 12px;border:1px solid #e5e8ef;border-radius:8px;font-size:14px;margin:14px 0;outline:none;background:#fff}
+button{width:100%;padding:11px;border:none;border-radius:8px;background:#2f6fed;color:#fff;font-size:14px;cursor:pointer}
+button.stop{background:#d9534f}
 </style>
 </head>
 <body>
@@ -28,16 +31,37 @@ var q={};location.search.replace(/^\?/,"").split("&").forEach(function(kv){var a
 var do_=q.do,gid=q.gid,mins=parseInt(q.mins||"30",10);
 var tt=document.getElementById("tt"),msg=document.getElementById("msg");
 function show(t,cls){msg.innerHTML='<p class="'+(cls||"")+'" style="font-size:15px">'+t+"</p>"}
-if(!gid||["grant","block"].indexOf(do_)<0){show("链接无效", "bad");tt.textContent="操作失败";}
-else fetch(API+"?t="+Date.now(),{headers:H()})
+/* 菜单模式：下拉选时长 + 保存 */
+if(gid && (q.do==="menu"||!q.do)){
+  tt.textContent="处理游客"+(q.name?("「"+q.name+"」"):"");
+  msg.innerHTML='<p>选择给 TA 多少使用时间：</p>'
+    +'<select id="sel">'
+    +'<option value="30">再给 30 分钟</option>'
+    +'<option value="60">再给 1 小时</option>'
+    +'<option value="120" selected>再给 2 小时</option>'
+    +'<option value="720">再给 12 小时</option>'
+    +'<option value="1440">再给 24 小时</option>'
+    +'<option value="10080">再给 7 天</option>'
+    +'<option value="stop">⛔ 停止 TA 的访问</option>'
+    +'</select>'
+    +'<button id="go">保 存</button>';
+  document.getElementById("go").onclick=function(){
+    var v=document.getElementById("sel").value;
+    if(v==="stop") run("block",0);
+    else run("grant",parseInt(v,10));
+  };
+} 
+function run(action,m){
+  msg.innerHTML="<p>正在保存…</p>";
+  fetch(API+"?t="+Date.now(),{headers:H()})
   .then(function(r){if(!r.ok)throw new Error("读取失败 "+r.status);return r.json()})
   .then(function(j){
     var list;try{list=JSON.parse(B64D(j.content))||{}}catch(e){list={}}
     list.requests=list.requests||[];list.grants=list.grants||[];list.blocked=list.blocked||[];
     var rec=list.requests.filter(function(x){return x.gid===gid})[0]||{};
-    if(do_==="grant"){
+    if(action==="grant"){
       list.blocked=list.blocked.filter(function(x){return x!==gid});
-      var until=new Date(Date.now()+mins*60000).toISOString();
+      var until=new Date(Date.now()+m*60000).toISOString();
       var ex=list.grants.filter(function(x){return x.gid===gid})[0];
       if(ex){if(new Date(until)>new Date(ex.until))ex.until=until}
       else list.grants.push({gid:gid,name:rec.name||"",site:rec.site||"",until:until});
@@ -45,14 +69,17 @@ else fetch(API+"?t="+Date.now(),{headers:H()})
       if(list.blocked.indexOf(gid)<0)list.blocked.push(gid);
       list.grants=list.grants.filter(function(x){return x.gid!==gid});
     }
-    return fetch(API,{method:"PUT",headers:H(),body:JSON.stringify({message:"guest "+do_,branch:"main",content:B64E(JSON.stringify(list,null,2)),sha:j.sha})})
+    return fetch(API,{method:"PUT",headers:H(),body:JSON.stringify({message:"guest "+action,branch:"main",content:B64E(JSON.stringify(list,null,2)),sha:j.sha})})
       .then(function(r){if(!r.ok)throw new Error("保存失败 "+r.status)});
   })
   .then(function(){
-    if(do_==="grant"){tt.textContent="✅ 已延时";show("已给「"+(q.name||"游客")+"」延长 "+mins+" 分钟<br>25 秒内自动生效","ok")}
+    if(action==="grant"){tt.textContent="✅ 已保存";show("已给「"+(q.name||"游客")+"」延长 "+m+" 分钟<br>25 秒内自动生效","ok")}
     else{tt.textContent="⛔ 已停止";show("已停止「"+(q.name||"游客")+"」的访问<br>25 秒内其页面将被锁定","ok")}
   })
-  .catch(function(e){tt.textContent="操作失败";show(e.message+"，请重试或到聚合后台操作","bad")});
+  .catch(function(e){tt.textContent="操作失败";show(e.message+"，请重试","bad")});
+}
+if(gid && ["grant","block"].indexOf(do_)>-1) run(do_,mins);
+else if(!(gid && !q.do)){show("链接无效","bad");tt.textContent="操作失败";}
 </script>
 </body>
 </html>
