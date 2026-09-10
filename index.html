@@ -8,38 +8,37 @@
 :root{--main:#2f6fed;--bg:#f5f7fa;--line:#e5e8ef;--sub:#667}
 *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI","Microsoft YaHei",sans-serif}
 body{background:var(--bg);color:#222}
-/* 登录 */
 #login{display:flex;align-items:center;justify-content:center;min-height:100vh}
 .lc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:36px 32px;width:330px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
 .lc h1{font-size:18px;text-align:center;margin-bottom:4px}
 .lc p{font-size:12px;color:var(--sub);text-align:center;margin-bottom:20px}
 .lc input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:12px;outline:none}
+.lc input:focus{border-color:var(--main)}
 .lc button{width:100%;padding:10px;border:none;border-radius:8px;background:var(--main);color:#fff;font-size:14px;cursor:pointer}
 #err{color:#d33;font-size:12px;text-align:center;min-height:16px;margin-bottom:8px}
-/* 主界面 */
 #app{display:none;flex-direction:column;height:100vh}
-.bar{background:#fff;border-bottom:1px solid var(--line);padding:8px 16px;display:flex;align-items:center;gap:8px}
+.bar{background:#fff;border-bottom:1px solid var(--line);padding:8px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .bar b{font-size:14px;margin-right:6px}
-.tab{padding:6px 18px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:13px}
+.tab{padding:6px 16px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:13px}
 .tab.on{background:var(--main);color:#fff;border-color:var(--main)}
 .bar .sp{flex:1}
 .bar .out{color:#d33;background:none;border:none;cursor:pointer;font-size:13px}
 .stage{flex:1;position:relative;background:#fff}
 .stage iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
 .stage .panel{position:absolute;inset:0;overflow:auto;padding:24px;background:#fff}
-.msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:14px;background:#fff;z-index:3}
-/* 账户管理 */
+.msg{position:absolute;inset:0;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;color:var(--sub);font-size:14px;background:#fff;z-index:3}
+.msg button{padding:8px 24px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-size:13px}
 .panel h2{font-size:16px;margin-bottom:12px}
-.panel .box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px;max-width:640px}
+.panel .box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px;max-width:760px}
 .panel label{font-size:13px;margin-right:6px}
 .panel input[type=text],.panel input[type=password]{padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;width:150px}
 .panel table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
 .panel th,.panel td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left}
 .panel th{color:var(--sub);font-weight:500}
-.panel .del{color:#d33;cursor:pointer;background:none;border:none;font-size:12px}
+.panel .del{color:#d33;cursor:pointer;background:#fff;border:1px solid #f3c1c1;border-radius:6px;font-size:12px;padding:4px 10px}
 .panel .save{padding:8px 22px;border:none;border-radius:8px;background:var(--main);color:#fff;font-size:13px;cursor:pointer}
 .panel .save[disabled]{opacity:.5}
-#accMsg{font-size:12px;color:var(--sub);margin-top:8px;min-height:16px}
+#accMsg,#guestMsg{font-size:12px;color:var(--sub);margin-top:8px;min-height:16px}
 .badge{display:inline-block;background:#eef3ff;color:var(--main);border-radius:6px;padding:1px 8px;font-size:11px;margin-right:4px}
 </style>
 </head>
@@ -47,7 +46,7 @@ body{background:var(--bg);color:#222}
 
 <div id="login">
   <div class="lc">
-    <h1>🔐 聚合后台</h1>
+    <h1>聚合后台</h1>
     <p>请输入账户密码登录</p>
     <div id="err"></div>
     <input id="u" placeholder="账户" autocomplete="username">
@@ -59,9 +58,10 @@ body{background:var(--bg);color:#222}
 <div id="app">
   <div class="bar">
     <b>聚合后台</b>
-    <span id="tabKbWrap"><button class="tab on" data-k="kb" onclick="show('kb')">📚 知识库后台</button></span>
-    <span id="tabMujiWrap"><button class="tab" data-k="muji" onclick="show('muji')">👕 MUJI 后台</button></span>
-    <span id="tabAccWrap"><button class="tab" data-k="acc" onclick="show('acc')">👥 账户签发</button></span>
+    <span id="tabKbWrap"><button class="tab on" data-k="kb" onclick="show('kb')">知识库后台</button></span>
+    <span id="tabMujiWrap"><button class="tab" data-k="muji" onclick="show('muji')">MUJI 后台</button></span>
+    <span id="tabAccWrap"><button class="tab" data-k="acc" onclick="show('acc')">账户签发</button></span>
+    <span id="tabGuestWrap"><button class="tab" data-k="guest" onclick="show('guest')">游客授权</button></span>
     <span class="sp"></span>
     <span id="who" style="font-size:12px;color:var(--sub)"></span>
     <button class="out" onclick="logout()">退出登录</button>
@@ -70,7 +70,7 @@ body{background:var(--bg);color:#222}
     <iframe id="f-kb" hidden></iframe>
     <iframe id="f-muji" hidden></iframe>
     <div class="panel" id="p-acc" hidden>
-      <h2>👥 账户签发</h2>
+      <h2>账户签发</h2>
       <div class="box">
         <label>账户</label><input type="text" id="nu">
         <label>密码</label><input type="text" id="np">
@@ -89,14 +89,14 @@ body{background:var(--bg);color:#222}
       </div>
     </div>
     <div class="panel" id="p-guest" hidden>
-      <h2>🚪 游客授权</h2>
+      <h2>游客授权</h2>
       <div class="box">
         <h2 style="font-size:14px">游客访问记录（未授权的默认只给 3 分钟）</h2>
         <table>
-          <thead><tr><th>时间</th><th>页面</th><th>姓名/单位</th><th>访问编号</th><th>授权</th></tr></thead>
+          <thead><tr><th>时间</th><th>页面</th><th>姓名/单位</th><th>访问编号</th><th>操作</th></tr></thead>
           <tbody id="guestReqs"><tr><td colspan="5">加载中…</td></tr></tbody>
         </table>
-        <div id="guestMsg" style="font-size:12px;color:var(--sub);margin-top:8px;min-height:16px"></div>
+        <div id="guestMsg"></div>
       </div>
       <div class="box">
         <h2 style="font-size:14px">已授权（延长访问）</h2>
@@ -107,46 +107,52 @@ body{background:var(--bg);color:#222}
         <div id="blockBox" style="margin-top:10px"></div>
       </div>
     </div>
-    <div class="msg" id="msg">正在加载…</div>
+    <div class="msg" id="msg" style="display:none">
+      <span id="msgTxt">正在加载…</span>
+      <button onclick="show(CURK,true)">重新加载</button>
+    </div>
   </div>
 </div>
 
 <script>
-/* ===== 超管账户（改这里） ===== */
+/* ===== 配置 ===== */
 var ADMIN_USER="panhao", ADMIN_PASS="panhao123";
-/* GitHub 存储账户表用 */
 var GH_TOKEN="ghp_1xQ0HVhS7lzEsRouzu"+"XKU9DTxHpsV94Acban"; /* 拼接防扫描 */
 var ACC_REPO="phgithum/admin-console", ACC_PATH="accounts.json";
+var GUEST_REPO="phgithum/cloud-db", GUEST_PATH="guests.json";
+var PAGES={kb:"/360-kb/admin.html", muji:"/MUJI/admin.html"};
 
-var SS="console_auth", PAGES={kb:"/360-kb/admin.html", muji:"/MUJI/admin.html"};
-var CUR=null; /* {user, master, perms:{kb,muji}} */
-var ready={}, cache={}, ACCS=null;
+var SS="console_auth";
+var CUR=null, ready={}, cache={}, ACCS=null, CURK=null;
+var GUESTS=null, GUESTS_SHA=null;
 function $(i){return document.getElementById(i)}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
 
 /* ===== 登录 ===== */
 function doLogin(){
   var u=$("u").value.trim(), p=$("p").value;
   if(!u||!p){$("err").textContent="请输入账户和密码";return}
   $("loginBtn").disabled=true; $("err").textContent="验证中…";
-  if(u===ADMIN_USER && p===ADMIN_PASS){
-    CUR={user:u, master:true, perms:{kb:true,muji:true}};
-    try{sessionStorage.setItem("console_master","1")}catch(e){}
+  function ok(user,master,perms){
+    CUR={user:user,master:master,perms:perms};
+    try{
+      sessionStorage.setItem(SS,"1");
+      sessionStorage.setItem("console_master",master?"1":"0");
+      sessionStorage.setItem("console_perms",JSON.stringify(perms));
+    }catch(e){}
+    $("loginBtn").disabled=false;
     enter(); return;
   }
+  if(u===ADMIN_USER && p===ADMIN_PASS){ ok(u,true,{kb:true,muji:true}); return; }
   loadAccs(function(accs){
     $("loginBtn").disabled=false;
     var hit=(accs||[]).filter(function(a){return a.u===u && a.p===p})[0];
-    if(hit){
-      CUR={user:u, master:false, perms:{kb:!!hit.kb, muji:!!hit.muji}};
-      enter();
-    }else{
-      $("err").textContent="账户或密码错误";
-    }
+    if(hit) ok(u,false,{kb:!!hit.kb,muji:!!hit.muji});
+    else $("err").textContent="账户或密码错误";
   });
 }
 function logout(){ try{sessionStorage.clear()}catch(e){} location.reload(); }
 function enter(){
-  sessionStorage.setItem(SS,"1"); sessionStorage.setItem("admin_auth","1");
   $("login").style.display="none"; $("app").style.display="flex";
   $("who").textContent = CUR.master ? "超管："+CUR.user : CUR.user;
   if(!CUR.perms.kb) $("tabKbWrap").style.display="none";
@@ -155,70 +161,101 @@ function enter(){
   show(CUR.perms.kb ? "kb" : (CUR.perms.muji ? "muji" : "acc"));
 }
 
-/* ===== 后台内嵌（fetch+srcdoc） ===== */
-function show(k){
+/* ===== 后台内嵌（同源优先 → 绝对地址兜底，fetch+srcdoc） ===== */
+function show(k,force){
+  CURK=k;
   document.querySelectorAll(".tab").forEach(function(b){b.classList.remove("on")});
-  document.querySelector('.tab[data-k="'+k+'"]').classList.add("on");
+  var tb=document.querySelector('.tab[data-k="'+k+'"]'); if(tb)tb.classList.add("on");
   ["kb","muji"].forEach(function(x){ $("f-"+x).hidden=(x!==k); });
-  $("p-acc").hidden = (k!=="acc");
-  $("p-guest").hidden = (k!=="guest");
-  if(k==="acc"){ if(CUR.master) renderAccs(); return; }
-  if(k==="guest"){ if(CUR.master) renderGuests(); return; }
-  var f=$("f-"+k);
-  if(ready[k]){ $("msg").style.display="none"; return; }
-  $("msg").style.display="flex"; $("msg").textContent="正在加载…";
-  if(cache[k]){ paint(f,cache[k],k); return; }
-  fetch(PAGES[k],{credentials:"same-origin"})
-    .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
-    .then(function(html){ cache[k]=html; paint(f,html,k); })
-    .catch(function(e){ $("msg").textContent="加载失败："+e.message; });
+  $("p-acc").hidden=(k!=="acc");
+  $("p-guest").hidden=(k!=="guest");
+  if(k==="acc"){ if(CUR.master) renderAccs(); $("msg").style.display="none"; return; }
+  if(k==="guest"){ if(CUR.master) renderGuests(); $("msg").style.display="none"; return; }
+  if(ready[k]&&!force){ $("msg").style.display="none"; return; }
+  if(!force&&cache[k]){ paint($("f-"+k),cache[k],k); return; }
+  $("msg").style.display="flex"; $("msgTxt").textContent="正在加载…";
+  var base=location.origin.indexOf("github.io")>=0 ? location.origin : "https://phgithum.github.io";
+  var us=[location.origin+PAGES[k], base+PAGES[k]];
+  (function tryOne(i){
+    if(i>=us.length){
+      $("msgTxt").innerHTML="加载失败：网络连不上后台页面<br><span style='font-size:12px;color:#99a'>请点下方按钮重试，或检查网络后刷新整个页面</span>";
+      return;
+    }
+    fetch(us[i],{credentials:"same-origin",cache:"no-store"})
+      .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
+      .then(function(html){ cache[k]=html; paint($("f-"+k),html,k); })
+      .catch(function(){ tryOne(i+1); });
+  })(0);
 }
 function paint(f,html,k){
   f.srcdoc=html;
   f.addEventListener("load",function once(){
     f.removeEventListener("load",once);
     ready[k]=true;
-    if(!$("f-"+k).hidden && !$("p-acc").offsetParent) $("msg").style.display="none";
+    $("msg").style.display="none";
   });
 }
 
-/* ===== 账户表存取（GitHub 仓库） ===== */
-function loadAccs(cb){
-  if(ACCS){cb(ACCS);return}
-  var repo=ACC_REPO,path=ACC_PATH;
+/* ===== 通用多通道读取 ===== */
+function chan(repo,path,token){
   var us=[
-    location.origin.indexOf("github.io")>=0 ? location.origin+"/"+repo.split("/")[1]+"/"+path+"?t="+Date.now() : null,
+    "https://api.github.com/repos/"+repo+"/contents/"+path+"?t="+Date.now(),
     "https://raw.githubusercontent.com/"+repo+"/main/"+path+"?t="+Date.now(),
     "https://cdn.jsdelivr.net/gh/"+repo+"@main/"+path
-  ].filter(Boolean);
-  (function tryOne(i){
-    if(i>=us.length){cb([]);return}
-    fetch(us[i]).then(function(r){return r.ok?r.json():Promise.reject()})
-      .then(function(j){ ACCS=j||[]; cb(ACCS); })
-      .catch(function(){tryOne(i+1)});
-  })(0);
+  ];
+  return function(cb){
+    (function tryOne(i){
+      if(i>=us.length){cb(null);return}
+      fetch(us[i],{headers:token?{"Authorization":"Bearer "+token,"Accept":"application/vnd.github+json"}:{},cache:"no-store"})
+        .then(function(r){ if(!r.ok) return Promise.reject(); return r.json(); })
+        .then(function(j){ cb(j); })
+        .catch(function(){ tryOne(i+1); });
+    })(0);
+  };
+}
+
+/* ===== 账户表存取 ===== */
+var accReader=chan(ACC_REPO,ACC_PATH,null);
+function loadAccs(cb){
+  if(ACCS){cb(ACCS);return}
+  accReader(function(j){
+    if(j===null){cb([]);return}
+    if(j&&j.content!==undefined){ /* api 格式 */
+      try{ ACCS=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,"")))))||[] }
+      catch(e){ ACCS=[] }
+    } else ACCS=j||[];
+    cb(ACCS);
+  });
+}
+function ghPut(repo,path,msg,content,cb){
+  function attempt(retry){
+    fetch("https://api.github.com/repos/"+repo+"/contents/"+path,{
+      headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json"}
+    }).then(function(r){ return r.ok ? r.json() : {}; })
+      .then(function(old){
+        return fetch("https://api.github.com/repos/"+repo+"/contents/"+path,{
+          method:"PUT",
+          headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
+          body:JSON.stringify({message:msg,branch:"main",content:content,sha:old.sha||undefined})
+        });
+      })
+      .then(function(r){
+        if(r.ok){cb(true);return}
+        if(retry){attempt(false);return}
+        cb(false,r.status);
+      })
+      .catch(function(){ if(retry){attempt(false);return} cb(false,0); });
+  }
+  attempt(true);
 }
 function saveAccs(list, cb){
-  var body={message:"update accounts",content:btoa(unescape(encodeURIComponent(JSON.stringify(list,null,2)))),branch:"main"};
-  fetch("https://api.github.com/repos/"+ACC_REPO+"/contents/"+ACC_PATH,{
-    method:"GET",
-    headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json"}
-  }).then(function(r){ return r.ok ? r.json() : {} })
-    .then(function(old){
-      if(old && old.sha) body.sha=old.sha;
-      return fetch("https://api.github.com/repos/"+ACC_REPO+"/contents/"+ACC_PATH,{
-        method:"PUT",
-        headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
-        body:JSON.stringify(body)
-      });
-    })
-    .then(function(r){ if(!r.ok) throw new Error("保存失败 "+r.status); cb(); })
-    .catch(function(e){ alert(e.message); });
+  var content=btoa(unescape(encodeURIComponent(JSON.stringify(list,null,2))));
+  ghPut(ACC_REPO,ACC_PATH,"update accounts",content,cb);
 }
 function renderAccs(){
   loadAccs(function(list){
     var tb=$("accList");
-    if(!list.length){ tb.innerHTML='<tr><td colspan="4">暂无，先用上面表单签发</td></tr>'; return; }
+    if(!list||!list.length){ tb.innerHTML='<tr><td colspan="4">暂无，先用上面表单签发</td></tr>'; return; }
     tb.innerHTML="";
     list.forEach(function(a,i){
       var tr=document.createElement("tr");
@@ -231,7 +268,10 @@ function renderAccs(){
       b.onclick=function(){
         if(!confirm("确定删除账户 "+list[b.dataset.i].u+" ？"))return;
         list.splice(+b.dataset.i,1);
-        saveAccs(list, function(){ ACCS=list; renderAccs(); $("accMsg").textContent="已删除并同步"; });
+        saveAccs(list, function(ok){
+          if(ok){ ACCS=list; renderAccs(); $("accMsg").textContent="已删除并同步"; }
+          else $("accMsg").textContent="删除保存失败，请重试";
+        });
       };
     });
   });
@@ -246,82 +286,56 @@ function addAcc(){
     if(list.filter(function(a){return a.u===u}).length){
       $("accMsg").textContent="该账户已存在"; $("addBtn").disabled=false; return;
     }
-    list.push({u:u,p:p,kb:kb,muji:muji});
-    saveAccs(list, function(){
-      ACCS=list; renderAccs();
-      $("accMsg").textContent="✅ 已签发 "+u+"，即刻生效";
-      $("nu").value=""; $("np").value="";
+    list=list.slice(); list.push({u:u,p:p,kb:kb,muji:muji});
+    saveAccs(list, function(ok){
       $("addBtn").disabled=false;
+      if(ok){ ACCS=list; renderAccs(); $("accMsg").textContent="已签发 "+u+"，即刻生效"; $("nu").value=""; $("np").value=""; }
+      else $("accMsg").textContent="保存失败（网络/权限），请重试";
     });
   });
 }
-function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
 
-/* ===== 游客授权（cloud-db/guests.json） ===== */
-var GUEST_REPO="phgithum/cloud-db", GUEST_PATH="guests.json", GUESTS=null, GUESTS_SHA=null;
+/* ===== 游客授权 ===== */
+var guestReader=chan(GUEST_REPO,GUEST_PATH,GH_TOKEN);
 function loadGuests(cb){
-  function parseApi(j){
-    GUESTS_SHA=j.sha;
-    try{ GUESTS=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,"")))))||{requests:[],grants:[]}; }
-    catch(e){ GUESTS={requests:[],grants:[]}; }
-    cb(GUESTS);
-  }
-  var us=[
-    "https://api.github.com/repos/"+GUEST_REPO+"/contents/"+GUEST_PATH+"?t="+Date.now(),
-    "https://raw.githubusercontent.com/"+GUEST_REPO+"/main/"+GUEST_PATH+"?t="+Date.now(),
-    "https://cdn.jsdelivr.net/gh/"+GUEST_REPO+"@main/"+GUEST_PATH
-  ];
-  (function tryOne(i){
-    if(i>=us.length){cb({requests:[],grants:[]});return}
-    fetch(us[i],{headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json"}})
-      .then(function(r){ if(!r.ok) return Promise.reject(); return r.json(); })
-      .then(function(j){
-        if(j&&j.content!==undefined)parseApi(j);
-        else{ GUESTS_SHA=null; GUESTS=j||{requests:[],grants:[]}; cb(GUESTS); }
-      })
-      .catch(function(){tryOne(i+1)});
-  })(0);
+  guestReader(function(j){
+    var g={requests:[],grants:[]};
+    if(j){
+      try{
+        if(j.content!==undefined) g=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,"")))))||g;
+        else g=j;
+      }catch(e){}
+    }
+    GUESTS_SHA=(j&&j.sha)||null;
+    g.requests=g.requests||[]; g.grants=g.grants||[]; g.blocked=g.blocked||[];
+    GUESTS=g; cb(g);
+  });
 }
 function saveGuests(list, cb){
   var content=btoa(unescape(encodeURIComponent(JSON.stringify(list,null,2))));
-  function attempt(retry){
-    fetch("https://api.github.com/repos/"+GUEST_REPO+"/contents/"+GUEST_PATH,{
-      headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json"}
-    }).then(function(r){ return r.ok ? r.json() : {}; })
-      .then(function(j){
-        return fetch("https://api.github.com/repos/"+GUEST_REPO+"/contents/"+GUEST_PATH,{
-          method:"PUT",
-          headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
-          body:JSON.stringify({message:"update guests",branch:"main",content:content,sha:j.sha||undefined})
-        });
-      })
-      .then(function(r){
-        if(r.ok){ GUESTS=list; cb(); return; }
-        if(retry) attempt(false);
-        else r.text().then(function(t){
-          $("guestMsg").textContent="保存失败 "+r.status+"（已自动重试仍失败，请刷新页面再试）";
-        });
-      })
-      .catch(function(e){ if(retry) attempt(false); else $("guestMsg").textContent="网络错误，保存未成功"; });
-  }
-  attempt(true);
+  ghPut(GUEST_REPO,GUEST_PATH,"update guests",content,function(ok,st){
+    if(ok){ GUESTS=list; cb(); }
+    else $("guestMsg").textContent="保存失败 "+(st||"（网络）")+"，请重试";
+  });
 }
 function fmtLocal(iso){
   try{ return new Date(iso).toLocaleString("zh-CN",{hour12:false}); }catch(e){ return iso; }
 }
 function renderGuests(){
   loadGuests(function(g){
-    g.requests=g.requests||[]; g.grants=g.grants||[];
     var tb=$("guestReqs");
     if(!g.requests.length){ tb.innerHTML='<tr><td colspan="5">还没有游客访问</td></tr>'; }
     else{
       tb.innerHTML="";
       g.requests.slice().reverse().forEach(function(r){
         var tr=document.createElement("tr");
-        var granted=(g.grants||[]).filter(function(x){return x.gid===r.gid}).length>0;
-        var blocked=(g.blocked||[]).indexOf(r.gid)>=0;
+        var granted=g.grants.filter(function(x){return x.gid===r.gid}).length>0;
+        var blocked=g.blocked.indexOf(r.gid)>=0;
         tr.innerHTML="<td>"+esc(fmtLocal(r.time))+"</td><td>"+esc(r.site||"-")+"</td><td>"+esc(r.name||"匿名")+"</td><td style='font-size:11px;color:#889'>"+esc(r.gid)+"</td>"
-          +'<td>'+(blocked?'<span class="badge" style="background:#fee;color:#d33">已停止</span>':(granted?'<span class="badge">已授权</span>':'')+'<input type="text" id="gm-'+esc(r.gid)+'" placeholder="分钟" style="width:56px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px"> <button class="save" style="padding:4px 10px;font-size:12px" onclick="grantGuest(\''+esc(r.gid)+'\')">延时</button> <button class="del" style="padding:4px 8px;font-size:12px;border:1px solid #f3c1c1;border-radius:6px" onclick="blockGuest(\''+esc(r.gid)+'\')">停止</button>')+"</td>";
+          +'<td>'+(blocked?'<span class="badge" style="background:#fee;color:#d33">已停止</span>':(granted?'<span class="badge">已授权</span>':'')
+          +'<input type="text" id="gm-'+esc(r.gid)+'" placeholder="分钟" style="width:56px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px"> '
+          +'<button class="save" style="padding:4px 10px;font-size:12px" onclick="grantGuest(\''+esc(r.gid)+'\')">延时</button> '
+          +'<button class="del" onclick="blockGuest(\''+esc(r.gid)+'\')">停止</button>')+"</td>";
         tb.appendChild(tr);
       });
     }
@@ -337,11 +351,11 @@ function renderGuests(){
       });
     }
     var bb=$("blockBox");
-    if((g.blocked||[]).length){
-      bb.innerHTML="<b style='font-size:13px;color:#d33'>⛔ 已停止的游客</b><table style='margin-top:6px'><thead><tr><th>页面</th><th>姓名/单位</th><th>访问编号</th><th>操作</th></tr></thead><tbody id='blockRows'></tbody></table>";
-      var rows=bb.querySelector("#blockRows"); bb.querySelector("table").style.cssText+=";font-size:13px";
+    if(g.blocked.length){
+      bb.innerHTML="<b style='font-size:13px;color:#d33'>已停止的游客</b><table style='margin-top:6px'><thead><tr><th>页面</th><th>姓名/单位</th><th>访问编号</th><th>操作</th></tr></thead><tbody id='blockRows'></tbody></table>";
+      var rows=bb.querySelector("#blockRows");
       g.blocked.forEach(function(gid,i){
-        var r0=(g.requests||[]).filter(function(x){return x.gid===gid})[0]||{};
+        var r0=g.requests.filter(function(x){return x.gid===gid})[0]||{};
         var tr=document.createElement("tr");
         tr.innerHTML="<td>"+esc(r0.site||"-")+"</td><td>"+esc(r0.name||"匿名")+"</td><td style='font-size:11px;color:#889'>"+esc(gid)+"</td>"
           +'<td><button class="save" style="padding:4px 10px;font-size:12px" onclick="unblockGuest('+i+')">解封</button></td>';
@@ -351,51 +365,43 @@ function renderGuests(){
   });
 }
 function grantGuest(gid){
-  var mins=parseInt(document.getElementById("gm-"+gid).value,10);
+  var inp=document.getElementById("gm-"+gid);
+  var mins=parseInt(inp?inp.value:"",10);
   if(!mins||mins<=0){ $("guestMsg").textContent="请填写授权分钟数"; return; }
   $("guestMsg").textContent="授权中…";
   loadGuests(function(g){
-    var r=(g.requests||[]).filter(function(x){return x.gid===gid})[0];
-    g.grants=g.grants||[];
-    g.blocked=(g.blocked||[]).filter(function(x){return x!==gid}); /* 授权同时解封 */
+    var r=g.requests.filter(function(x){return x.gid===gid})[0];
+    g.blocked=g.blocked.filter(function(x){return x!==gid});
     var until=new Date(Date.now()+mins*60000).toISOString();
     var exist=g.grants.filter(function(x){return x.gid===gid})[0];
     if(exist){ if(new Date(until)>new Date(exist.until)) exist.until=until; }
     else g.grants.push({gid:gid,name:r?r.name:"",site:r?r.site:"",until:until});
-    saveGuests(g,function(){ $("guestMsg").textContent="✅ 已授权 "+mins+" 分钟，游客页面将在 25 秒内自动生效"; renderGuests(); });
+    saveGuests(g,function(){ $("guestMsg").textContent="已授权 "+mins+" 分钟，游客页面 25 秒内自动生效"; renderGuests(); });
   });
 }
 function blockGuest(gid){
   if(!confirm("确定停止该游客的访问？其页面将在 25 秒内被锁定。"))return;
   $("guestMsg").textContent="停止中…";
   loadGuests(function(g){
-    g.blocked=g.blocked||[];
     if(g.blocked.indexOf(gid)<0) g.blocked.push(gid);
-    g.grants=(g.grants||[]).filter(function(x){return x.gid!==gid}); /* 停止同时撤销授权 */
-    saveGuests(g,function(){ $("guestMsg").textContent="⛔ 已停止该游客"; renderGuests(); });
+    g.grants=g.grants.filter(function(x){return x.gid!==gid});
+    saveGuests(g,function(){ $("guestMsg").textContent="已停止该游客"; renderGuests(); });
   });
 }
 function unblockGuest(i){
-  loadGuests(function(g){
-    g.blocked.splice(i,1);
-    saveGuests(g,function(){ renderGuests(); });
-  });
+  loadGuests(function(g){ g.blocked.splice(i,1); saveGuests(g,function(){ renderGuests(); }); });
 }
 function revokeGuest(i){
-  loadGuests(function(g){
-    g.grants.splice(i,1);
-    saveGuests(g,function(){ renderGuests(); });
-  });
+  loadGuests(function(g){ g.grants.splice(i,1); saveGuests(g,function(){ renderGuests(); }); });
 }
 
-/* ===== 启动 ===== */
+/* ===== 启动（恢复会话） ===== */
 try{
   if(sessionStorage.getItem(SS)==="1"){
-    if(sessionStorage.getItem("console_master")==="1"){
-      CUR={user:ADMIN_USER, master:true, perms:{kb:true,muji:true}};
-    }else{
-      CUR={user:"-", master:false, perms:{kb:true,muji:true}};
-    }
+    var master=sessionStorage.getItem("console_master")==="1";
+    var perms={kb:true,muji:true};
+    try{ perms=JSON.parse(sessionStorage.getItem("console_perms"))||perms }catch(e){}
+    CUR={user:master?ADMIN_USER:"-",master:master,perms:perms};
     enter();
   }
 }catch(e){}
