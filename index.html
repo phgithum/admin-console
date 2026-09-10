@@ -185,10 +185,18 @@ function paint(f,html,k){
 /* ===== 账户表存取（GitHub 仓库） ===== */
 function loadAccs(cb){
   if(ACCS){cb(ACCS);return}
-  fetch("https://raw.githubusercontent.com/"+ACC_REPO+"/main/"+ACC_PATH+"?t="+Date.now())
-    .then(function(r){ return r.ok ? r.json() : []; })
-    .then(function(j){ ACCS=j||[]; cb(ACCS); })
-    .catch(function(){ cb([]); });
+  var repo=ACC_REPO,path=ACC_PATH;
+  var us=[
+    location.origin.indexOf("github.io")>=0 ? location.origin+"/"+repo.split("/")[1]+"/"+path+"?t="+Date.now() : null,
+    "https://raw.githubusercontent.com/"+repo+"/main/"+path+"?t="+Date.now(),
+    "https://cdn.jsdelivr.net/gh/"+repo+"@main/"+path
+  ].filter(Boolean);
+  (function tryOne(i){
+    if(i>=us.length){cb([]);return}
+    fetch(us[i]).then(function(r){return r.ok?r.json():Promise.reject()})
+      .then(function(j){ ACCS=j||[]; cb(ACCS); })
+      .catch(function(){tryOne(i+1)});
+  })(0);
 }
 function saveAccs(list, cb){
   var body={message:"update accounts",content:btoa(unescape(encodeURIComponent(JSON.stringify(list,null,2)))),branch:"main"};
@@ -252,27 +260,51 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
 /* ===== 游客授权（cloud-db/guests.json） ===== */
 var GUEST_REPO="phgithum/cloud-db", GUEST_PATH="guests.json", GUESTS=null, GUESTS_SHA=null;
 function loadGuests(cb){
-  fetch("https://api.github.com/repos/"+GUEST_REPO+"/contents/"+GUEST_PATH+"?t="+Date.now(),{
-    headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json"}
-  }).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
-    .then(function(j){
-      GUESTS_SHA=j.sha;
-      try{ GUESTS=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,"")))))||{requests:[],grants:[]}; }
-      catch(e){ GUESTS={requests:[],grants:[]}; }
-      cb(GUESTS);
-    })
-    .catch(function(){ cb({requests:[],grants:[]}); });
+  function parseApi(j){
+    GUESTS_SHA=j.sha;
+    try{ GUESTS=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,"")))))||{requests:[],grants:[]}; }
+    catch(e){ GUESTS={requests:[],grants:[]}; }
+    cb(GUESTS);
+  }
+  var us=[
+    "https://api.github.com/repos/"+GUEST_REPO+"/contents/"+GUEST_PATH+"?t="+Date.now(),
+    "https://raw.githubusercontent.com/"+GUEST_REPO+"/main/"+GUEST_PATH+"?t="+Date.now(),
+    "https://cdn.jsdelivr.net/gh/"+GUEST_REPO+"@main/"+GUEST_PATH
+  ];
+  (function tryOne(i){
+    if(i>=us.length){cb({requests:[],grants:[]});return}
+    fetch(us[i],{headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json"}})
+      .then(function(r){ if(!r.ok) return Promise.reject(); return r.json(); })
+      .then(function(j){
+        if(j&&j.content!==undefined)parseApi(j);
+        else{ GUESTS_SHA=null; GUESTS=j||{requests:[],grants:[]}; cb(GUESTS); }
+      })
+      .catch(function(){tryOne(i+1)});
+  })(0);
 }
 function saveGuests(list, cb){
-  var body={message:"update guests",branch:"main",
-    content:btoa(unescape(encodeURIComponent(JSON.stringify(list,null,2))))};
-  if(GUESTS_SHA) body.sha=GUESTS_SHA;
-  fetch("https://api.github.com/repos/"+GUEST_REPO+"/contents/"+GUEST_PATH,{
-    method:"PUT",
-    headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
-    body:JSON.stringify(body)
-  }).then(function(r){ if(!r.ok) throw new Error("保存失败 "+r.status); cb(); })
-    .catch(function(e){ $("guestMsg").textContent=e.message; });
+  var content=btoa(unescape(encodeURIComponent(JSON.stringify(list,null,2))));
+  function attempt(retry){
+    fetch("https://api.github.com/repos/"+GUEST_REPO+"/contents/"+GUEST_PATH,{
+      headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json"}
+    }).then(function(r){ return r.ok ? r.json() : {}; })
+      .then(function(j){
+        return fetch("https://api.github.com/repos/"+GUEST_REPO+"/contents/"+GUEST_PATH,{
+          method:"PUT",
+          headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
+          body:JSON.stringify({message:"update guests",branch:"main",content:content,sha:j.sha||undefined})
+        });
+      })
+      .then(function(r){
+        if(r.ok){ GUESTS=list; cb(); return; }
+        if(retry) attempt(false);
+        else r.text().then(function(t){
+          $("guestMsg").textContent="保存失败 "+r.status+"（已自动重试仍失败，请刷新页面再试）";
+        });
+      })
+      .catch(function(e){ if(retry) attempt(false); else $("guestMsg").textContent="网络错误，保存未成功"; });
+  }
+  attempt(true);
 }
 function fmtLocal(iso){
   try{ return new Date(iso).toLocaleString("zh-CN",{hour12:false}); }catch(e){ return iso; }
