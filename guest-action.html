@@ -21,6 +21,7 @@ button.stop{background:#d9534f}
   <div id="msg"><p>正在执行，请稍候…</p></div>
   <p style="margin-top:14px;font-size:12px;color:#99a">执行完可以直接关闭本页面</p>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js"></script>
 <script>
 var TOK="ghp_MjkBxQwkydhgmw7TxpItxQrNhtXKsO1sA"+"wRS";
 var API="https://api.github.com/repos/phgithum/cloud-db/contents/guests.json";
@@ -73,10 +74,22 @@ function run(action,m){
       .then(function(r){if(!r.ok)throw new Error("保存失败 "+r.status)});
   })
   .then(function(){
-    if(action==="grant"){tt.textContent="✅ 已保存";show("已给「"+(q.name||"游客")+"」延长 "+m+" 分钟<br>25 秒内自动生效","ok")}
-    else{tt.textContent="⛔ 已停止";show("已停止「"+(q.name||"游客")+"」的访问<br>25 秒内其页面将被锁定","ok")}
+    guestPush(action==="grant"?{action:"extend",until:new Date(Date.now()+m*60000).toISOString()}:{action:"stop"});
+    if(action==="grant"){tt.textContent="✅ 已保存";show("已给「"+(q.name||"游客")+"」延长 "+m+" 分钟<br>已实时通知，最长4秒生效","ok")}
+    else{tt.textContent="⛔ 已停止";show("已停止「"+(q.name||"游客")+"」的访问<br>已实时通知，其页面秒级锁定","ok")}
   })
   .catch(function(e){tt.textContent="操作失败";show(e.message+"，请重试","bad")});
+}
+/* 实时推送：经EMQX公共通道把指令秒级送到游客页面 */
+function guestPush(msg){
+  try{
+    if(!window.mqtt||!gid)return;
+    var c=mqtt.connect("wss://broker.emqx.io:8084/mqtt",{clientId:"ga_"+Math.random().toString(36).slice(2,8),connectTimeout:6000,clean:true});
+    c.on("connect",function(){
+      try{c.publish("phwork/guest/"+gid,JSON.stringify(msg),{qos:0},function(){try{c.end(true)}catch(e){}});}catch(e){try{c.end(true)}catch(e2){}}
+      setTimeout(function(){try{c.end(true)}catch(e){}},4000);
+    });
+  }catch(e){}
 }
 if(gid && ["grant","block"].indexOf(do_)>-1) run(do_,mins);
 else if(!(gid && !q.do)){show("链接无效","bad");tt.textContent="操作失败";}
