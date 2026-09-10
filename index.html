@@ -366,16 +366,20 @@ function renderGuests(){
     } else bb.innerHTML="";
   });
 }
-/* 实时推送：通过EMQX公共通道把指令秒级送到游客页面（失败静默，轮询兜底） */
-function guestPush(gid,msg){
+/* 实时推送：通过EMQX公共通道把指令秒级送到游客页面（失败时回调提示，轮询兜底） */
+function guestPush(gid,msg,cb){
+  var done=false;
+  function fin(ok){ if(done)return; done=true; try{c.end(true)}catch(e){} if(cb)cb(ok); }
+  var c=null;
   try{
-    if(!window.mqtt)return;
-    var c=mqtt.connect("wss://broker.emqx.io:8084/mqtt",{clientId:"ac_"+Math.random().toString(36).slice(2,8),connectTimeout:6000,clean:true});
+    if(!window.mqtt){ if(cb)cb(false); return; }
+    c=mqtt.connect("wss://broker.emqx.io:8084/mqtt",{clientId:"ac_"+Math.random().toString(36).slice(2,8),connectTimeout:6000,clean:true});
     c.on("connect",function(){
-      try{c.publish("phwork/guest/"+gid,JSON.stringify(msg),{qos:0},function(){try{c.end(true)}catch(e){}});}catch(e){try{c.end(true)}catch(e2){}}
-      setTimeout(function(){try{c.end(true)}catch(e){}},4000);
+      try{c.publish("phwork/guest/"+gid,JSON.stringify(msg),{qos:0},function(){fin(true)});}catch(e){fin(false)}
+      setTimeout(function(){fin(false)},6000);
     });
-  }catch(e){}
+    c.on("error",function(){ fin(false); });
+  }catch(e){ if(cb)cb(false); }
 }
 function grantGuest(gid){
   var inp=document.getElementById("gm-"+gid);
@@ -393,12 +397,16 @@ function grantGuest(gid){
   });
 }
 function blockGuest(gid){
-  if(!confirm("确定停止该游客的访问？其页面将在 25 秒内被锁定。"))return;
+  if(!confirm("确定停止该游客的访问？其页面将被立即锁定。"))return;
   $("guestMsg").textContent="停止中…";
   loadGuests(function(g){
     if(g.blocked.indexOf(gid)<0) g.blocked.push(gid);
     g.grants=g.grants.filter(function(x){return x.gid!==gid});
-    saveGuests(g,function(){ $("guestMsg").textContent="已停止该游客（已实时通知）"; guestPush(gid,{action:"stop"}); renderGuests(); });
+    saveGuests(g,function(){
+      $("guestMsg").textContent="已停止该游客，正在实时通知…";
+      guestPush(gid,{action:"stop"},function(ok){ $("guestMsg").textContent="已停止该游客"+(ok?" · ⚡锁定指令已实时送达":" · ⚠实时通道未通，游客将在4秒内轮询生效"); });
+      renderGuests();
+    });
   });
 }
 function unblockGuest(i){
