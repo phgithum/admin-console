@@ -77,6 +77,7 @@ body{background:var(--bg);color:#222}
         可访问：
         <label><input type="checkbox" id="nc-kb" checked>知识库</label>
         <label><input type="checkbox" id="nc-muji" checked>MUJI</label>
+        <label><input type="checkbox" id="nc-quiz" checked>考试系统</label>
         <button class="save" id="addBtn" onclick="addAcc()">签发账户</button>
         <div id="accMsg"></div>
       </div>
@@ -260,7 +261,7 @@ function renderAccs(){
     list.forEach(function(a,i){
       var tr=document.createElement("tr");
       tr.innerHTML="<td>"+esc(a.u)+"</td><td>"+esc(a.p)+"</td><td>"
-        +(a.kb?'<span class="badge">知识库</span>':"")+(a.muji?'<span class="badge">MUJI</span>':"")+"</td>"
+        +(a.kb?'<span class="badge">知识库</span>':"")+(a.muji?'<span class="badge">MUJI</span>':"")+(a.quiz?'<span class="badge">考试</span>':"")+"</td>"
         +'<td><button class="del" data-i="'+i+'">删除</button></td>';
       tb.appendChild(tr);
     });
@@ -278,15 +279,15 @@ function renderAccs(){
 }
 function addAcc(){
   var u=$("nu").value.trim(), p=$("np").value.trim();
-  var kb=$("nc-kb").checked, muji=$("nc-muji").checked;
+  var kb=$("nc-kb").checked, muji=$("nc-muji").checked, quiz=$("nc-quiz").checked;
   if(!u||!p){$("accMsg").textContent="账户和密码都要填";return}
-  if(!kb&&!muji){$("accMsg").textContent="至少勾选一个可访问的后台";return}
+  if(!kb&&!muji&&!quiz){$("accMsg").textContent="至少勾选一个可访问的系统";return}
   $("addBtn").disabled=true; $("accMsg").textContent="保存中…";
   loadAccs(function(list){
     if(list.filter(function(a){return a.u===u}).length){
       $("accMsg").textContent="该账户已存在"; $("addBtn").disabled=false; return;
     }
-    list=list.slice(); list.push({u:u,p:p,kb:kb,muji:muji});
+    list=list.slice(); list.push({u:u,p:p,kb:kb,muji:muji,quiz:quiz});
     saveAccs(list, function(ok){
       $("addBtn").disabled=false;
       if(ok){ ACCS=list; renderAccs(); $("accMsg").textContent="已签发 "+u+"，即刻生效"; $("nu").value=""; $("np").value=""; }
