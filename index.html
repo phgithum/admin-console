@@ -120,7 +120,7 @@ var ADMIN_USER="panhao", ADMIN_PASS="panhao123";
 var GH_TOKEN="ghp_1xQ0HVhS7lzEsRouzu"+"XKU9DTxHpsV94Acban"; /* 拼接防扫描 */
 var ACC_REPO="phgithum/admin-console", ACC_PATH="accounts.json";
 var GUEST_REPO="phgithum/cloud-db", GUEST_PATH="guests.json";
-var PAGES={kb:"/360-kb/admin.html", muji:"/MUJI/admin.html"};
+var PAGES={kb:["https://cdn.jsdelivr.net/gh/phgithum/360-kb@main/admin.html","https://zhishiku.phwork.qd.je/admin.html"], muji:["https://cdn.jsdelivr.net/gh/phgithum/MUJI@main/admin.html","https://mjzsk.phwork.qd.je/admin.html"]};
 
 var SS="console_auth";
 var CUR=null, ready={}, cache={}, ACCS=null, CURK=null;
@@ -174,14 +174,14 @@ function show(k,force){
   if(ready[k]&&!force){ $("msg").style.display="none"; return; }
   if(!force&&cache[k]){ paint($("f-"+k),cache[k],k); return; }
   $("msg").style.display="flex"; $("msgTxt").textContent="正在加载…";
-  var base=location.origin.indexOf("github.io")>=0 ? location.origin : "https://phgithum.github.io";
-  var us=[location.origin+PAGES[k], base+PAGES[k]];
+  var us=PAGES[k].slice();
+  us.splice(1,0,"https://api.allorigins.win/raw?url="+encodeURIComponent(PAGES[k][0]));
   (function tryOne(i){
     if(i>=us.length){
       $("msgTxt").innerHTML="加载失败：网络连不上后台页面<br><span style='font-size:12px;color:#99a'>请点下方按钮重试，或检查网络后刷新整个页面</span>";
       return;
     }
-    fetch(us[i],{credentials:"same-origin",cache:"no-store"})
+    fetch(us[i],{cache:"no-store"})
       .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
       .then(function(html){ cache[k]=html; paint($("f-"+k),html,k); })
       .catch(function(){ tryOne(i+1); });
