@@ -349,7 +349,7 @@ function renderGuests(){
       g.grants.forEach(function(x,i){
         var tr=document.createElement("tr");
         tr.innerHTML="<td>"+esc(x.site||"-")+"</td><td>"+esc(x.name||"匿名")+"</td><td style='font-size:11px;color:#889'>"+esc(x.gid)+"</td><td>"+esc(fmtLocal(x.until))+"</td>"
-          +'<td><button class="del" onclick="revokeGuest('+i+')">撤销</button></td>';
+          +'<td><button class="del" onclick="revokeGuest('+i+',\''+esc(x.gid)+'\')">撤销</button></td>';
         tg.appendChild(tr);
       });
     }
@@ -420,6 +420,17 @@ function blockGuest(gid){
 }
 function unblockGuest(i){
   loadGuests(function(g){ g.blocked.splice(i,1); saveGuests(g,function(){ renderGuests(); }); });
+}
+function revokeGuest(i,gid){
+  if(!confirm("撤销后该游客将回落到3分钟试用额度（通常已用完，页面会立即锁定）。确定撤销？"))return;
+  loadGuests(function(g){
+    g.grants.splice(i,1);
+    saveGuests(g,function(){
+      $("guestMsg").textContent="已撤销授权，正在实时通知…";
+      guestPush(gid,{action:"stop"},function(ok){ $("guestMsg").textContent="已撤销授权"+(ok?" · ⚡锁定指令已实时送达":" · 游客将在4秒内回落到期锁定"); });
+      renderGuests();
+    });
+  });
 }
 function revokeGuest(i){
   loadGuests(function(g){ g.grants.splice(i,1); saveGuests(g,function(){ renderGuests(); }); });
