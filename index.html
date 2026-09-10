@@ -88,6 +88,24 @@ body{background:var(--bg);color:#222}
         </table>
       </div>
     </div>
+    <div class="panel" id="p-guest" hidden>
+      <h2>🚪 游客授权</h2>
+      <div class="box">
+        <h2 style="font-size:14px">游客访问记录（未授权的默认只给 3 分钟）</h2>
+        <table>
+          <thead><tr><th>时间</th><th>页面</th><th>姓名/单位</th><th>访问编号</th><th>授权</th></tr></thead>
+          <tbody id="guestReqs"><tr><td colspan="5">加载中…</td></tr></tbody>
+        </table>
+        <div id="guestMsg" style="font-size:12px;color:var(--sub);margin-top:8px;min-height:16px"></div>
+      </div>
+      <div class="box">
+        <h2 style="font-size:14px">已授权（延长访问）</h2>
+        <table>
+          <thead><tr><th>页面</th><th>姓名/单位</th><th>访问编号</th><th>有效期至</th><th>操作</th></tr></thead>
+          <tbody id="grantList"><tr><td colspan="5">加载中…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
     <div class="msg" id="msg">正在加载…</div>
   </div>
 </div>
@@ -132,7 +150,7 @@ function enter(){
   $("who").textContent = CUR.master ? "超管："+CUR.user : CUR.user;
   if(!CUR.perms.kb) $("tabKbWrap").style.display="none";
   if(!CUR.perms.muji) $("tabMujiWrap").style.display="none";
-  if(!CUR.master) $("tabAccWrap").style.display="none";
+  if(!CUR.master){ $("tabAccWrap").style.display="none"; $("tabGuestWrap").style.display="none"; }
   show(CUR.perms.kb ? "kb" : (CUR.perms.muji ? "muji" : "acc"));
 }
 
@@ -142,46 +160,17 @@ function show(k){
   document.querySelector('.tab[data-k="'+k+'"]').classList.add("on");
   ["kb","muji"].forEach(function(x){ $("f-"+x).hidden=(x!==k); });
   $("p-acc").hidden = (k!=="acc");
+  $("p-guest").hidden = (k!=="guest");
   if(k==="acc"){ if(CUR.master) renderAccs(); return; }
+  if(k==="guest"){ if(CUR.master) renderGuests(); return; }
   var f=$("f-"+k);
   if(ready[k]){ $("msg").style.display="none"; return; }
   $("msg").style.display="flex"; $("msg").textContent="正在加载…";
   if(cache[k]){ paint(f,cache[k],k); return; }
-  // 三通道加载：直连 → 强制缓存重试 → 本机存档兜底（页面加载成功过一次就永远能开）
-  var LS_KEY="ac_pg_"+k;
-  function tryFetch(opts,then){
-    fetch(PAGES[k],Object.assign({credentials:"same-origin"},opts||{}))
-      .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
-      .then(then)
-      .catch(function(){ tryFetch2(then); });
-  }
-  function tryFetch2(then){
-    fetch(PAGES[k]+"?cb="+Date.now(),{credentials:"same-origin",cache:"force-cache"})
-      .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
-      .then(then)
-      .catch(function(){ useStored(then); });
-  }
-  function useStored(then){
-    // 国内 CDN 兜底：jsdelivr 一般可达
-    var m=PAGES[k].match(/^\/([^/]+)\/([^/]+)\.html$/);
-    if(m){
-      fetch("https://cdn.jsdelivr.net/gh/phgithum/"+m[1]+"@main/"+m[2]+".html")
-        .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
-        .then(function(html){ then(html); })
-        .catch(function(){ useStored2(then); });
-    } else useStored2(then);
-  }
-  function useStored2(then){
-    var saved=null;
-    try{ saved=localStorage.getItem(LS_KEY); }catch(e){}
-    if(saved){ then(saved); }
-    else { $("msg").textContent="加载失败：直连、缓存、CDN 都不通，请检查网络后刷新重试"; }
-  }
-  tryFetch(null,function(html){
-    cache[k]=html;
-    try{ localStorage.setItem(LS_KEY,html); }catch(e){}
-    paint(f,html,k);
-  });
+  fetch(PAGES[k],{credentials:"same-origin"})
+    .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
+    .then(function(html){ cache[k]=html; paint(f,html,k); })
+    .catch(function(e){ $("msg").textContent="加载失败："+e.message; });
 }
 function paint(f,html,k){
   f.srcdoc=html;
@@ -195,16 +184,10 @@ function paint(f,html,k){
 /* ===== 账户表存取（GitHub 仓库） ===== */
 function loadAccs(cb){
   if(ACCS){cb(ACCS);return}
-  // 同源优先（accounts.json 就在本站，必定可达），raw / jsdelivr 兜底
-  var urls=["accounts.json?t="+Date.now(),
-            "https://raw.githubusercontent.com/"+ACC_REPO+"/main/"+ACC_PATH+"?t="+Date.now(),
-            "https://cdn.jsdelivr.net/gh/"+ACC_REPO+"@"+("main")+"/"+ACC_PATH];
-  (function tryOne(i){
-    if(i>=urls.length){cb([]);return}
-    fetch(urls[i]).then(function(r){return r.ok?r.json():Promise.reject()})
-      .then(function(j){ACCS=j||[];cb(ACCS);})
-      .catch(function(){tryOne(i+1)});
-  })(0);
+  fetch("https://raw.githubusercontent.com/"+ACC_REPO+"/main/"+ACC_PATH+"?t="+Date.now())
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(j){ ACCS=j||[]; cb(ACCS); })
+    .catch(function(){ cb([]); });
 }
 function saveAccs(list, cb){
   var body={message:"update accounts",content:btoa(unescape(encodeURIComponent(JSON.stringify(list,null,2)))),branch:"main"};
@@ -264,6 +247,83 @@ function addAcc(){
   });
 }
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+
+/* ===== 游客授权（cloud-db/guests.json） ===== */
+var GUEST_REPO="phgithum/cloud-db", GUEST_PATH="guests.json", GUESTS=null, GUESTS_SHA=null;
+function loadGuests(cb){
+  fetch("https://api.github.com/repos/"+GUEST_REPO+"/contents/"+GUEST_PATH+"?t="+Date.now(),{
+    headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json"}
+  }).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+    .then(function(j){
+      GUESTS_SHA=j.sha;
+      try{ GUESTS=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,"")))))||{requests:[],grants:[]}; }
+      catch(e){ GUESTS={requests:[],grants:[]}; }
+      cb(GUESTS);
+    })
+    .catch(function(){ cb({requests:[],grants:[]}); });
+}
+function saveGuests(list, cb){
+  var body={message:"update guests",branch:"main",
+    content:btoa(unescape(encodeURIComponent(JSON.stringify(list,null,2))))};
+  if(GUESTS_SHA) body.sha=GUESTS_SHA;
+  fetch("https://api.github.com/repos/"+GUEST_REPO+"/contents/"+GUEST_PATH,{
+    method:"PUT",
+    headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
+    body:JSON.stringify(body)
+  }).then(function(r){ if(!r.ok) throw new Error("保存失败 "+r.status); cb(); })
+    .catch(function(e){ $("guestMsg").textContent=e.message; });
+}
+function fmtLocal(iso){
+  try{ return new Date(iso).toLocaleString("zh-CN",{hour12:false}); }catch(e){ return iso; }
+}
+function renderGuests(){
+  loadGuests(function(g){
+    g.requests=g.requests||[]; g.grants=g.grants||[];
+    var tb=$("guestReqs");
+    if(!g.requests.length){ tb.innerHTML='<tr><td colspan="5">还没有游客访问</td></tr>'; }
+    else{
+      tb.innerHTML="";
+      g.requests.slice().reverse().forEach(function(r){
+        var tr=document.createElement("tr");
+        var granted=(g.grants||[]).filter(function(x){return x.gid===r.gid}).length>0;
+        tr.innerHTML="<td>"+esc(fmtLocal(r.time))+"</td><td>"+esc(r.site||"-")+"</td><td>"+esc(r.name||"匿名")+"</td><td style='font-size:11px;color:#889'>"+esc(r.gid)+"</td>"
+          +'<td>'+(granted?'<span class="badge">已授权</span>':'<input type="text" id="gm-'+esc(r.gid)+'" placeholder="分钟" style="width:60px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px"> <button class="save" style="padding:4px 10px;font-size:12px" onclick="grantGuest(\''+esc(r.gid)+'\')">授权</button>')+"</td>";
+        tb.appendChild(tr);
+      });
+    }
+    var tg=$("grantList");
+    if(!g.grants.length){ tg.innerHTML='<tr><td colspan="5">暂无授权</td></tr>'; }
+    else{
+      tg.innerHTML="";
+      g.grants.forEach(function(x,i){
+        var tr=document.createElement("tr");
+        tr.innerHTML="<td>"+esc(x.site||"-")+"</td><td>"+esc(x.name||"匿名")+"</td><td style='font-size:11px;color:#889'>"+esc(x.gid)+"</td><td>"+esc(fmtLocal(x.until))+"</td>"
+          +'<td><button class="del" onclick="revokeGuest('+i+')">撤销</button></td>';
+        tg.appendChild(tr);
+      });
+    }
+  });
+}
+function grantGuest(gid){
+  var mins=parseInt(document.getElementById("gm-"+gid).value,10);
+  if(!mins||mins<=0){ $("guestMsg").textContent="请填写授权分钟数"; return; }
+  $("guestMsg").textContent="授权中…";
+  loadGuests(function(g){
+    var r=(g.requests||[]).filter(function(x){return x.gid===gid})[0];
+    g.grants=g.grants||[];
+    var until=new Date(Date.now()+mins*60000).toISOString();
+    var exist=g.grants.filter(function(x){return x.gid===gid})[0];
+    if(exist){ if(new Date(until)>new Date(exist.until)) exist.until=until; }
+    else g.grants.push({gid:gid,name:r?r.name:"",site:r?r.site:"",until:until});
+    saveGuests(g,function(){ $("guestMsg").textContent="✅ 已授权 "+mins+" 分钟，游客页面将在 25 秒内自动生效"; renderGuests(); });
+  });
+}
+function revokeGuest(i){
+  loadGuests(function(g){
+    g.grants.splice(i,1);
+    saveGuests(g,function(){ renderGuests(); });
+  });
+}
 
 /* ===== 启动 ===== */
 try{
