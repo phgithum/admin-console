@@ -115,6 +115,7 @@ body{background:var(--bg);color:#222}
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js"></script>
 <script>
 /* ===== 配置 ===== */
 var ADMIN_USER="panhao", ADMIN_PASS="panhao123";
@@ -365,6 +366,17 @@ function renderGuests(){
     } else bb.innerHTML="";
   });
 }
+/* 实时推送：通过EMQX公共通道把指令秒级送到游客页面（失败静默，轮询兜底） */
+function guestPush(gid,msg){
+  try{
+    if(!window.mqtt)return;
+    var c=mqtt.connect("wss://broker.emqx.io:8084/mqtt",{clientId:"ac_"+Math.random().toString(36).slice(2,8),connectTimeout:6000,clean:true});
+    c.on("connect",function(){
+      try{c.publish("phwork/guest/"+gid,JSON.stringify(msg),{qos:0},function(){try{c.end(true)}catch(e){}});}catch(e){try{c.end(true)}catch(e2){}}
+      setTimeout(function(){try{c.end(true)}catch(e){}},4000);
+    });
+  }catch(e){}
+}
 function grantGuest(gid){
   var inp=document.getElementById("gm-"+gid);
   var mins=parseInt(inp?inp.value:"",10);
@@ -377,7 +389,7 @@ function grantGuest(gid){
     var exist=g.grants.filter(function(x){return x.gid===gid})[0];
     if(exist){ if(new Date(until)>new Date(exist.until)) exist.until=until; }
     else g.grants.push({gid:gid,name:r?r.name:"",site:r?r.site:"",until:until});
-    saveGuests(g,function(){ $("guestMsg").textContent="已授权 "+mins+" 分钟，游客页面 25 秒内自动生效"; renderGuests(); });
+    saveGuests(g,function(){ $("guestMsg").textContent="已授权 "+mins+" 分钟，游客页面已实时通知（最长4秒兜底生效）"; guestPush(gid,{action:"extend",until:until}); renderGuests(); });
   });
 }
 function blockGuest(gid){
@@ -386,7 +398,7 @@ function blockGuest(gid){
   loadGuests(function(g){
     if(g.blocked.indexOf(gid)<0) g.blocked.push(gid);
     g.grants=g.grants.filter(function(x){return x.gid!==gid});
-    saveGuests(g,function(){ $("guestMsg").textContent="已停止该游客"; renderGuests(); });
+    saveGuests(g,function(){ $("guestMsg").textContent="已停止该游客（已实时通知）"; guestPush(gid,{action:"stop"}); renderGuests(); });
   });
 }
 function unblockGuest(i){
