@@ -337,6 +337,7 @@ function renderGuests(){
           +'<td>'+(blocked?'<span class="badge" style="background:#fee;color:#d33">已停止</span>':(granted?'<span class="badge">已授权</span>':'')
           +'<input type="text" id="gm-'+esc(r.gid)+'" placeholder="分钟" style="width:56px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px"> '
           +'<button class="save" style="padding:4px 10px;font-size:12px" onclick="grantGuest(\''+esc(r.gid)+'\')">延时</button> '
+          +'<button class="save" style="padding:4px 10px;font-size:12px;background:#eef2ff;color:#2456c4" onclick="testPush(\''+esc(r.gid)+'\')">测试</button> '
           +'<button class="del" onclick="blockGuest(\''+esc(r.gid)+'\')">停止</button>')+"</td>";
         tb.appendChild(tr);
       });
@@ -375,11 +376,19 @@ function guestPush(gid,msg,cb){
     if(!window.mqtt){ if(cb)cb(false); return; }
     c=mqtt.connect("wss://broker.emqx.io:8084/mqtt",{clientId:"ac_"+Math.random().toString(36).slice(2,8),connectTimeout:6000,clean:true});
     c.on("connect",function(){
-      try{c.publish("phwork/guest/"+gid,JSON.stringify(msg),{qos:0},function(){fin(true)});}catch(e){fin(false)}
+      try{c.publish("phwork/guest/"+gid,JSON.stringify(msg),{qos:1},function(){fin(true)});}catch(e){fin(false)}
       setTimeout(function(){fin(false)},6000);
     });
     c.on("error",function(){ fin(false); });
   }catch(e){ if(cb)cb(false); }
+}
+function testPush(gid){
+  $("guestMsg").textContent="正在向该游客发送测试指令（通道号 "+gid.slice(-6)+"）…";
+  guestPush(gid,{action:"ping"},function(ok){
+    $("guestMsg").textContent=ok
+      ?"⚡测试指令已发出。看游客页面：出现绿色「收到测试指令」=推送链路正常；没出现=游客端没收到，把这种情况截图给我"
+      :"⚠连接推送服务器失败（此网络可能拦截了 broker.emqx.io），游客将走4秒轮询兜底";
+  });
 }
 function grantGuest(gid){
   var inp=document.getElementById("gm-"+gid);
