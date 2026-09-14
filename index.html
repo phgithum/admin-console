@@ -256,8 +256,6 @@ function ensureToken(){
 
 var ACC_REPO="phgithum/admin-console", ACC_PATH="accounts.json";
 
-var GUEST_REPO="phgithum/cloud-db", GUEST_PATH="guests.json";
-
 var PAGES={
   kb:["https://raw.githubusercontent.com/phgithum/360-kb/main/admin.html","https://zhishiku.phwork.qd.je/admin.html","https://cdn.jsdelivr.net/gh/phgithum/360-kb@main/admin.html"],
   muji:["https://raw.githubusercontent.com/phgithum/MUJI/main/admin.html","https://mjzsk.phwork.qd.je/admin.html","https://cdn.jsdelivr.net/gh/phgithum/MUJI@main/admin.html"]
@@ -269,7 +267,7 @@ var SS="console_auth";
 
 var CUR=null, ready={}, cache={}, ACCS=null, CURK=null;
 
-var GUESTS=null, GUESTS_SHA=null;
+var GUESTS=null;
 
 function $(i){return document.getElementById(i)}
 
@@ -622,51 +620,26 @@ function addAcc(){
 
 
 
-/* ===== 游客授权 ===== */
+/* ===== 游客授权（kvdb.io 免鉴权存储，不再依赖 GitHub Token） ===== */
 
-var guestReader=chan(GUEST_REPO,GUEST_PATH,GH_TOKEN);
+var GKV="https://kvdb.io/Ks73CVNzBmXEcgUhaBfkFd/guests";
 
 function loadGuests(cb){
-
-  guestReader(function(j){
-
-    var g={requests:[],grants:[]};
-
-    if(j){
-
-      try{
-
-        if(j.content!==undefined) g=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,"")))))||g;
-
-        else g=j;
-
-      }catch(e){}
-
-    }
-
-    GUESTS_SHA=(j&&j.sha)||null;
-
-    g.requests=g.requests||[]; g.grants=g.grants||[]; g.blocked=g.blocked||[];
-
-    GUESTS=g; cb(g);
-
-  });
-
+  fetch(GKV+"?t="+Date.now(),{cache:"no-store"})
+    .then(function(r){return r.text()})
+    .then(function(s){
+      var g={requests:[],grants:[],blocked:[]};
+      try{ var j=JSON.parse(s); if(j&&typeof j==="object") g=j; }catch(e){}
+      g.requests=g.requests||[]; g.grants=g.grants||[]; g.blocked=g.blocked||[];
+      GUESTS=g; cb(g);
+    })
+    .catch(function(){ var g={requests:[],grants:[],blocked:[]}; GUESTS=g; cb(g); });
 }
 
 function saveGuests(list, cb){
-  if(!ensureToken()){ $("guestMsg").textContent="未设置 GitHub Token，无法保存"; return; }
-
-  var content=btoa(unescape(encodeURIComponent(JSON.stringify(list,null,2))));
-
-  ghPut(GUEST_REPO,GUEST_PATH,"update guests",content,function(ok,st){
-
-    if(ok){ GUESTS=list; cb(); }
-
-    else $("guestMsg").textContent="保存失败 "+(st||"（网络）")+"，请重试";
-
-  });
-
+  fetch(GKV,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(list)})
+    .then(function(r){ if(r.ok){ GUESTS=list; cb(); } else $("guestMsg").textContent="保存失败 "+r.status+"，请重试"; })
+    .catch(function(){ $("guestMsg").textContent="保存失败（网络），请重试"; });
 }
 
 function fmtLocal(iso){
