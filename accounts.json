@@ -12,12 +12,5 @@
     "kb": false,
     "muji": false,
     "quiz": true
-  },
-  {
-    "u": "jane",
-    "p": "jane123",
-    "kb": false,
-    "muji": true,
-    "quiz": false
   }
 ]
