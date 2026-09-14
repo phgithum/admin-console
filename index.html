@@ -1,451 +1,924 @@
 <!DOCTYPE html>
+
 <html lang="zh-CN">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width,initial-scale=1">
+
 <title>聚合后台</title>
+
 <style>
+
 :root{--main:#2f6fed;--bg:#f5f7fa;--line:#e5e8ef;--sub:#667}
+
 *{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI","Microsoft YaHei",sans-serif}
+
 body{background:var(--bg);color:#222}
+
 #login{display:flex;align-items:center;justify-content:center;min-height:100vh}
+
 .lc{background:#fff;border:1px solid var(--line);border-radius:12px;padding:36px 32px;width:330px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+
 .lc h1{font-size:18px;text-align:center;margin-bottom:4px}
+
 .lc p{font-size:12px;color:var(--sub);text-align:center;margin-bottom:20px}
+
 .lc input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;margin-bottom:12px;outline:none}
+
 .lc input:focus{border-color:var(--main)}
+
 .lc button{width:100%;padding:10px;border:none;border-radius:8px;background:var(--main);color:#fff;font-size:14px;cursor:pointer}
+
 #err{color:#d33;font-size:12px;text-align:center;min-height:16px;margin-bottom:8px}
+
 #app{display:none;flex-direction:column;height:100vh}
+
 .bar{background:#fff;border-bottom:1px solid var(--line);padding:8px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
 .bar b{font-size:14px;margin-right:6px}
+
 .tab{padding:6px 16px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:13px}
+
 .tab.on{background:var(--main);color:#fff;border-color:var(--main)}
+
 .bar .sp{flex:1}
+
 .bar .out{color:#d33;background:none;border:none;cursor:pointer;font-size:13px}
+
 .stage{flex:1;position:relative;background:#fff}
+
 .stage iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
+
 .stage .panel{position:absolute;inset:0;overflow:auto;padding:24px;background:#fff}
+
 .msg{position:absolute;inset:0;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;color:var(--sub);font-size:14px;background:#fff;z-index:3}
+
 .msg button{padding:8px 24px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-size:13px}
+
 .panel h2{font-size:16px;margin-bottom:12px}
+
 .panel .box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px;max-width:760px}
+
 .panel label{font-size:13px;margin-right:6px}
+
 .panel input[type=text],.panel input[type=password]{padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;width:150px}
+
 .panel table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+
 .panel th,.panel td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left}
+
 .panel th{color:var(--sub);font-weight:500}
+
 .panel .del{color:#d33;cursor:pointer;background:#fff;border:1px solid #f3c1c1;border-radius:6px;font-size:12px;padding:4px 10px}
+
 .panel .save{padding:8px 22px;border:none;border-radius:8px;background:var(--main);color:#fff;font-size:13px;cursor:pointer}
+
 .panel .save[disabled]{opacity:.5}
+
 #accMsg,#guestMsg{font-size:12px;color:var(--sub);margin-top:8px;min-height:16px}
+
 .badge{display:inline-block;background:#eef3ff;color:var(--main);border-radius:6px;padding:1px 8px;font-size:11px;margin-right:4px}
+
 </style>
+
 </head>
+
 <body>
 
+
+
 <div id="login">
+
   <div class="lc">
+
     <h1>聚合后台</h1>
+
     <p>请输入账户密码登录</p>
+
     <div id="err"></div>
+
     <input id="u" placeholder="账户" autocomplete="username">
+
     <input id="p" type="password" placeholder="密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+
     <button id="loginBtn" onclick="doLogin()">登 录</button>
+
   </div>
+
 </div>
+
+
 
 <div id="app">
+
   <div class="bar">
+
     <b>聚合后台</b>
+
     <span id="tabKbWrap"><button class="tab on" data-k="kb" onclick="show('kb')">知识库后台</button></span>
+
     <span id="tabMujiWrap"><button class="tab" data-k="muji" onclick="show('muji')">MUJI 后台</button></span>
+
     <span id="tabAccWrap"><button class="tab" data-k="acc" onclick="show('acc')">账户签发</button></span>
+
     <span id="tabGuestWrap"><button class="tab" data-k="guest" onclick="show('guest')">游客授权</button></span>
+
     <span class="sp"></span>
+    <input id="tkIn" type="password" placeholder="GitHub Token（本机保存）" style="width:200px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px">
+    <button class="tab" onclick="saveToken()">保存</button>
+
     <span id="who" style="font-size:12px;color:var(--sub)"></span>
+
     <button class="out" onclick="logout()">退出登录</button>
+
   </div>
+
   <div class="stage">
+
     <iframe id="f-kb" hidden></iframe>
+
     <iframe id="f-muji" hidden></iframe>
+
     <div class="panel" id="p-acc" hidden>
+
       <h2>账户签发</h2>
+
       <div class="box">
+
         <label>账户</label><input type="text" id="nu">
+
         <label>密码</label><input type="text" id="np">
+
         可访问：
+
         <label><input type="checkbox" id="nc-kb" checked>知识库</label>
+
         <label><input type="checkbox" id="nc-muji" checked>MUJI</label>
+
         <label><input type="checkbox" id="nc-quiz" checked>考试系统</label>
+
         <button class="save" id="addBtn" onclick="addAcc()">签发账户</button>
+
         <div id="accMsg"></div>
+
       </div>
+
       <div class="box">
+
         <h2 style="font-size:14px">已签发账户</h2>
+
         <table>
+
           <thead><tr><th>账户</th><th>密码</th><th>可访问</th><th>操作</th></tr></thead>
+
           <tbody id="accList"><tr><td colspan="4">加载中…</td></tr></tbody>
+
         </table>
+
       </div>
+
     </div>
+
     <div class="panel" id="p-guest" hidden>
+
       <h2>游客授权</h2>
+
       <div class="box">
+
         <h2 style="font-size:14px">游客访问记录（未授权的默认只给 3 分钟）</h2>
+
         <table>
+
           <thead><tr><th>时间</th><th>页面</th><th>姓名/单位</th><th>访问编号</th><th>操作</th></tr></thead>
+
           <tbody id="guestReqs"><tr><td colspan="5">加载中…</td></tr></tbody>
+
         </table>
+
         <div id="guestMsg"></div>
+
       </div>
+
       <div class="box">
+
         <h2 style="font-size:14px">已授权（延长访问）</h2>
+
         <table>
+
           <thead><tr><th>页面</th><th>姓名/单位</th><th>访问编号</th><th>有效期至</th><th>操作</th></tr></thead>
+
           <tbody id="grantList"><tr><td colspan="5">加载中…</td></tr></tbody>
+
         </table>
+
         <div id="blockBox" style="margin-top:10px"></div>
+
       </div>
+
     </div>
+
     <div class="msg" id="msg" style="display:none">
+
       <span id="msgTxt">正在加载…</span>
+
       <button onclick="show(CURK,true)">重新加载</button>
+
     </div>
+
   </div>
+
 </div>
 
+
+
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js"></script>
+
 <script>
+
 /* ===== 配置 ===== */
+
 var ADMIN_USER="panhao", ADMIN_PASS="panhao123";
-var GH_TOKEN="ghp_1xQ0HVhS7lzEsRouzu"+"XKU9DTxHpsV94Acban"; /* 拼接防扫描 */
+
+var GH_TOKEN=""; /* 不再写死在源码：公开页面内嵌 token 等于全网泄露，改为本机粘贴一次 */
+try{ GH_TOKEN=localStorage.getItem("gh_write_token")||""; }catch(e){}
+function ensureToken(){
+  if(GH_TOKEN) return true;
+  var t=prompt("首次使用：请粘贴一个 GitHub Token（建一个仅限本仓库读写的细粒度 token 最安全），只存在本机浏览器，之后不再提示：","");
+  t=(t||"").trim();
+  if(!t) return false;
+  GH_TOKEN=t; try{ localStorage.setItem("gh_write_token",t); }catch(e){}
+  alert("Token 已保存在本机浏览器");
+  return true;
+}
+
 var ACC_REPO="phgithum/admin-console", ACC_PATH="accounts.json";
+
 var GUEST_REPO="phgithum/cloud-db", GUEST_PATH="guests.json";
-var PAGES={kb:["https://cdn.jsdelivr.net/gh/phgithum/360-kb@main/admin.html","https://zhishiku.phwork.qd.je/admin.html"], muji:["https://cdn.jsdelivr.net/gh/phgithum/MUJI@main/admin.html","https://mjzsk.phwork.qd.je/admin.html"]};
+
+var PAGES={
+  kb:["https://raw.githubusercontent.com/phgithum/360-kb/main/admin.html","https://zhishiku.phwork.qd.je/admin.html","https://cdn.jsdelivr.net/gh/phgithum/360-kb@main/admin.html"],
+  muji:["https://raw.githubusercontent.com/phgithum/MUJI/main/admin.html","https://mjzsk.phwork.qd.je/admin.html","https://cdn.jsdelivr.net/gh/phgithum/MUJI@main/admin.html"]
+};
+
+
 
 var SS="console_auth";
+
 var CUR=null, ready={}, cache={}, ACCS=null, CURK=null;
+
 var GUESTS=null, GUESTS_SHA=null;
+
 function $(i){return document.getElementById(i)}
+
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")}
 
+
+
 /* ===== 登录 ===== */
+
 function doLogin(){
+
   var u=$("u").value.trim(), p=$("p").value;
+
   if(!u||!p){$("err").textContent="请输入账户和密码";return}
+
   $("loginBtn").disabled=true; $("err").textContent="验证中…";
+
   function ok(user,master,perms){
+
     CUR={user:user,master:master,perms:perms};
+
     try{
+
       sessionStorage.setItem(SS,"1");
+
       sessionStorage.setItem("console_master",master?"1":"0");
+
       sessionStorage.setItem("console_perms",JSON.stringify(perms));
+      /* 统一会话：内嵌后台与各站点门禁共用同一登录态，避免二次输密码 */
+      sessionStorage.setItem("admin_auth","1");
+      if(perms.kb) sessionStorage.setItem("front_gate_kb","1");
+      if(perms.muji) sessionStorage.setItem("front_gate_muji","1");
+
     }catch(e){}
+
     $("loginBtn").disabled=false;
+
     enter(); return;
+
   }
+
   if(u===ADMIN_USER && p===ADMIN_PASS){ ok(u,true,{kb:true,muji:true}); return; }
+
   loadAccs(function(accs){
+
     $("loginBtn").disabled=false;
+
     var hit=(accs||[]).filter(function(a){return a.u===u && a.p===p})[0];
+
     if(hit) ok(u,false,{kb:!!hit.kb,muji:!!hit.muji});
+
     else $("err").textContent="账户或密码错误";
+
   });
+
+}
+
+function saveToken(){
+  var t=($("tkIn").value||"").trim();
+  if(!t){ alert(GH_TOKEN?"本机已存 Token（输入新值可替换）":"尚未设置 Token"); return; }
+  GH_TOKEN=t; try{ localStorage.setItem("gh_write_token",t); }catch(e){}
+  $("tkIn").value=""; alert("Token 已保存在本机浏览器");
 }
 function logout(){ try{sessionStorage.clear()}catch(e){} location.reload(); }
+
 function enter(){
+
   $("login").style.display="none"; $("app").style.display="flex";
+
   $("who").textContent = CUR.master ? "超管："+CUR.user : CUR.user;
+
   if(!CUR.perms.kb) $("tabKbWrap").style.display="none";
+
   if(!CUR.perms.muji) $("tabMujiWrap").style.display="none";
+
   if(!CUR.master){ $("tabAccWrap").style.display="none"; $("tabGuestWrap").style.display="none"; }
+
   show(CUR.perms.kb ? "kb" : (CUR.perms.muji ? "muji" : "acc"));
+
 }
+
+
 
 /* ===== 后台内嵌（同源优先 → 绝对地址兜底，fetch+srcdoc） ===== */
+
 function show(k,force){
+
   CURK=k;
+
   document.querySelectorAll(".tab").forEach(function(b){b.classList.remove("on")});
+
   var tb=document.querySelector('.tab[data-k="'+k+'"]'); if(tb)tb.classList.add("on");
+
   ["kb","muji"].forEach(function(x){ $("f-"+x).hidden=(x!==k); });
+
   $("p-acc").hidden=(k!=="acc");
+
   $("p-guest").hidden=(k!=="guest");
+
   if(k==="acc"){ if(CUR.master) renderAccs(); $("msg").style.display="none"; return; }
+
   if(k==="guest"){ if(CUR.master) renderGuests(); $("msg").style.display="none"; return; }
+
   if(ready[k]&&!force){ $("msg").style.display="none"; return; }
+
   if(!force&&cache[k]){ paint($("f-"+k),cache[k],k); return; }
+
   $("msg").style.display="flex"; $("msgTxt").textContent="正在加载…";
+
   var us=PAGES[k].slice();
+
   us.splice(1,0,"https://api.allorigins.win/raw?url="+encodeURIComponent(PAGES[k][0]));
+
   (function tryOne(i){
+
     if(i>=us.length){
+
       $("msgTxt").innerHTML="加载失败：网络连不上后台页面<br><span style='font-size:12px;color:#99a'>请点下方按钮重试，或检查网络后刷新整个页面</span>";
+
       return;
+
     }
+
     fetch(us[i],{cache:"no-store"})
+
       .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
+
       .then(function(html){ cache[k]=html; paint($("f-"+k),html,k); })
+
       .catch(function(){ tryOne(i+1); });
+
   })(0);
+
 }
+
 function paint(f,html,k){
+
   f.srcdoc=html;
+
   f.addEventListener("load",function once(){
+
     f.removeEventListener("load",once);
+
     ready[k]=true;
+
     $("msg").style.display="none";
+
   });
+
 }
+
+
 
 /* ===== 通用多通道读取 ===== */
+
 function chan(repo,path,token){
+
   var us=[
+
     "https://api.github.com/repos/"+repo+"/contents/"+path+"?t="+Date.now(),
+
     "https://raw.githubusercontent.com/"+repo+"/main/"+path+"?t="+Date.now(),
+
     "https://cdn.jsdelivr.net/gh/"+repo+"@main/"+path
+
   ];
+
   return function(cb){
+
     (function tryOne(i){
+
       if(i>=us.length){cb(null);return}
+
       fetch(us[i],{headers:token?{"Authorization":"Bearer "+token,"Accept":"application/vnd.github+json"}:{},cache:"no-store"})
+
         .then(function(r){ if(!r.ok) return Promise.reject(); return r.json(); })
+
         .then(function(j){ cb(j); })
+
         .catch(function(){ tryOne(i+1); });
+
     })(0);
+
   };
+
 }
+
+
 
 /* ===== 账户表存取 ===== */
+
 var accReader=chan(ACC_REPO,ACC_PATH,null);
+
 function loadAccs(cb){
+
   if(ACCS){cb(ACCS);return}
+
   accReader(function(j){
+
     if(j===null){cb([]);return}
+
     if(j&&j.content!==undefined){ /* api 格式 */
+
       try{ ACCS=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,"")))))||[] }
+
       catch(e){ ACCS=[] }
+
     } else ACCS=j||[];
+
     cb(ACCS);
+
   });
+
 }
+
 function ghPut(repo,path,msg,content,cb){
+
   function attempt(retry){
+
     fetch("https://api.github.com/repos/"+repo+"/contents/"+path,{
+
       headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json"}
+
     }).then(function(r){ return r.ok ? r.json() : {}; })
+
       .then(function(old){
+
         return fetch("https://api.github.com/repos/"+repo+"/contents/"+path,{
+
           method:"PUT",
+
           headers:{"Authorization":"Bearer "+GH_TOKEN,"Accept":"application/vnd.github+json","Content-Type":"application/json"},
+
           body:JSON.stringify({message:msg,branch:"main",content:content,sha:old.sha||undefined})
+
         });
+
       })
+
       .then(function(r){
+
         if(r.ok){cb(true);return}
+
         if(retry){attempt(false);return}
+
         cb(false,r.status);
+
       })
+
       .catch(function(){ if(retry){attempt(false);return} cb(false,0); });
+
   }
+
   attempt(true);
+
 }
+
 function saveAccs(list, cb){
+  if(!ensureToken()){ $("accMsg").textContent="未设置 GitHub Token，无法保存"; if(cb)cb(false); return; }
+
   var content=btoa(unescape(encodeURIComponent(JSON.stringify(list,null,2))));
+
   ghPut(ACC_REPO,ACC_PATH,"update accounts",content,cb);
+
 }
+
 function renderAccs(){
+
   loadAccs(function(list){
+
     var tb=$("accList");
+
     if(!list||!list.length){ tb.innerHTML='<tr><td colspan="4">暂无，先用上面表单签发</td></tr>'; return; }
+
     tb.innerHTML="";
+
     list.forEach(function(a,i){
+
       var tr=document.createElement("tr");
+
       tr.innerHTML="<td>"+esc(a.u)+"</td><td>"+esc(a.p)+"</td><td>"
+
         +(a.kb?'<span class="badge">知识库</span>':"")+(a.muji?'<span class="badge">MUJI</span>':"")+(a.quiz?'<span class="badge">考试</span>':"")+"</td>"
+
         +'<td><button class="del" data-i="'+i+'">删除</button></td>';
+
       tb.appendChild(tr);
+
     });
+
     tb.querySelectorAll(".del").forEach(function(b){
+
       b.onclick=function(){
+
         if(!confirm("确定删除账户 "+list[b.dataset.i].u+" ？"))return;
+
         list.splice(+b.dataset.i,1);
+
         saveAccs(list, function(ok){
+
           if(ok){ ACCS=list; renderAccs(); $("accMsg").textContent="已删除并同步"; }
+
           else $("accMsg").textContent="删除保存失败，请重试";
+
         });
+
       };
+
     });
+
   });
+
 }
+
 function addAcc(){
+
   var u=$("nu").value.trim(), p=$("np").value.trim();
+
   var kb=$("nc-kb").checked, muji=$("nc-muji").checked, quiz=$("nc-quiz").checked;
+
   if(!u||!p){$("accMsg").textContent="账户和密码都要填";return}
+
   if(!kb&&!muji&&!quiz){$("accMsg").textContent="至少勾选一个可访问的系统";return}
+
   $("addBtn").disabled=true; $("accMsg").textContent="保存中…";
+
   loadAccs(function(list){
+
     if(list.filter(function(a){return a.u===u}).length){
+
       $("accMsg").textContent="该账户已存在"; $("addBtn").disabled=false; return;
+
     }
+
     list=list.slice(); list.push({u:u,p:p,kb:kb,muji:muji,quiz:quiz});
+
     saveAccs(list, function(ok){
+
       $("addBtn").disabled=false;
+
       if(ok){ ACCS=list; renderAccs(); $("accMsg").textContent="已签发 "+u+"，即刻生效"; $("nu").value=""; $("np").value=""; }
+
       else $("accMsg").textContent="保存失败（网络/权限），请重试";
+
     });
+
   });
+
 }
+
+
 
 /* ===== 游客授权 ===== */
+
 var guestReader=chan(GUEST_REPO,GUEST_PATH,GH_TOKEN);
+
 function loadGuests(cb){
+
   guestReader(function(j){
+
     var g={requests:[],grants:[]};
+
     if(j){
+
       try{
+
         if(j.content!==undefined) g=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\s/g,"")))))||g;
+
         else g=j;
+
       }catch(e){}
+
     }
+
     GUESTS_SHA=(j&&j.sha)||null;
+
     g.requests=g.requests||[]; g.grants=g.grants||[]; g.blocked=g.blocked||[];
+
     GUESTS=g; cb(g);
+
   });
-}
-function saveGuests(list, cb){
-  var content=btoa(unescape(encodeURIComponent(JSON.stringify(list,null,2))));
-  ghPut(GUEST_REPO,GUEST_PATH,"update guests",content,function(ok,st){
-    if(ok){ GUESTS=list; cb(); }
-    else $("guestMsg").textContent="保存失败 "+(st||"（网络）")+"，请重试";
-  });
-}
-function fmtLocal(iso){
-  try{ return new Date(iso).toLocaleString("zh-CN",{hour12:false}); }catch(e){ return iso; }
-}
-function renderGuests(){
-  loadGuests(function(g){
-    var tb=$("guestReqs");
-    if(!g.requests.length){ tb.innerHTML='<tr><td colspan="5">还没有游客访问</td></tr>'; }
-    else{
-      tb.innerHTML="";
-      g.requests.slice().reverse().forEach(function(r){
-        var tr=document.createElement("tr");
-        var granted=g.grants.filter(function(x){return x.gid===r.gid}).length>0;
-        var blocked=g.blocked.indexOf(r.gid)>=0;
-        tr.innerHTML="<td>"+esc(fmtLocal(r.time))+"</td><td>"+esc(r.site||"-")+"</td><td>"+esc(r.name||"匿名")+"</td><td style='font-size:11px;color:#889'>"+esc(r.gid)+"</td>"
-          +'<td>'+(blocked?'<span class="badge" style="background:#fee;color:#d33">已停止</span>':(granted?'<span class="badge">已授权</span>':'')
-          +'<input type="text" id="gm-'+esc(r.gid)+'" placeholder="分钟" style="width:56px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px"> '
-          +'<button class="save" style="padding:4px 10px;font-size:12px" onclick="grantGuest(\''+esc(r.gid)+'\')">延时</button> '
-          +'<button class="save" style="padding:4px 10px;font-size:12px;background:#eef2ff;color:#2456c4" onclick="testPush(\''+esc(r.gid)+'\')">测试</button> '
-          +'<button class="del" onclick="blockGuest(\''+esc(r.gid)+'\')">停止</button>')+"</td>";
-        tb.appendChild(tr);
-      });
-    }
-    var tg=$("grantList");
-    if(!g.grants.length){ tg.innerHTML='<tr><td colspan="5">暂无授权</td></tr>'; }
-    else{
-      tg.innerHTML="";
-      g.grants.forEach(function(x,i){
-        var tr=document.createElement("tr");
-        tr.innerHTML="<td>"+esc(x.site||"-")+"</td><td>"+esc(x.name||"匿名")+"</td><td style='font-size:11px;color:#889'>"+esc(x.gid)+"</td><td>"+esc(fmtLocal(x.until))+"</td>"
-          +'<td><button class="del" onclick="revokeGuest('+i+',\''+esc(x.gid)+'\')">撤销</button></td>';
-        tg.appendChild(tr);
-      });
-    }
-    var bb=$("blockBox");
-    if(g.blocked.length){
-      bb.innerHTML="<b style='font-size:13px;color:#d33'>已停止的游客</b><table style='margin-top:6px'><thead><tr><th>页面</th><th>姓名/单位</th><th>访问编号</th><th>操作</th></tr></thead><tbody id='blockRows'></tbody></table>";
-      var rows=bb.querySelector("#blockRows");
-      g.blocked.forEach(function(gid,i){
-        var r0=g.requests.filter(function(x){return x.gid===gid})[0]||{};
-        var tr=document.createElement("tr");
-        tr.innerHTML="<td>"+esc(r0.site||"-")+"</td><td>"+esc(r0.name||"匿名")+"</td><td style='font-size:11px;color:#889'>"+esc(gid)+"</td>"
-          +'<td><button class="save" style="padding:4px 10px;font-size:12px" onclick="unblockGuest('+i+')">解封</button></td>';
-        rows.appendChild(tr);
-      });
-    } else bb.innerHTML="";
-  });
-}
-/* 实时推送：通过EMQX公共通道把指令秒级送到游客页面（失败时回调提示，轮询兜底） */
-function guestPush(gid,msg,cb){
-  var done=false;
-  function fin(ok){ if(done)return; done=true; try{c.end(true)}catch(e){} if(cb)cb(ok); }
-  var c=null;
-  try{
-    if(!window.mqtt){ if(cb)cb(false); return; }
-    c=mqtt.connect("wss://broker.emqx.io:8084/mqtt",{clientId:"ac_"+Math.random().toString(36).slice(2,8),connectTimeout:6000,clean:true});
-    c.on("connect",function(){
-      try{c.publish("phwork/guest/"+gid,JSON.stringify(msg),{qos:1},function(){fin(true)});}catch(e){fin(false)}
-      setTimeout(function(){fin(false)},6000);
-    });
-    c.on("error",function(){ fin(false); });
-  }catch(e){ if(cb)cb(false); }
-}
-function testPush(gid){
-  $("guestMsg").textContent="正在向该游客发送测试指令（通道号 "+gid.slice(-6)+"）…";
-  guestPush(gid,{action:"ping"},function(ok){
-    $("guestMsg").textContent=ok
-      ?"⚡测试指令已发出。看游客页面：出现绿色「收到测试指令」=推送链路正常；没出现=游客端没收到，把这种情况截图给我"
-      :"⚠连接推送服务器失败（此网络可能拦截了 broker.emqx.io），游客将走4秒轮询兜底";
-  });
-}
-function grantGuest(gid){
-  var inp=document.getElementById("gm-"+gid);
-  var mins=parseInt(inp?inp.value:"",10);
-  if(!mins||mins<=0){ $("guestMsg").textContent="请填写授权分钟数"; return; }
-  $("guestMsg").textContent="授权中…";
-  loadGuests(function(g){
-    var r=g.requests.filter(function(x){return x.gid===gid})[0];
-    g.blocked=g.blocked.filter(function(x){return x!==gid});
-    var until=new Date(Date.now()+mins*60000).toISOString();
-    var exist=g.grants.filter(function(x){return x.gid===gid})[0];
-    if(exist){ if(new Date(until)>new Date(exist.until)) exist.until=until; }
-    else g.grants.push({gid:gid,name:r?r.name:"",site:r?r.site:"",until:until});
-    saveGuests(g,function(){ $("guestMsg").textContent="已授权 "+mins+" 分钟，游客页面已实时通知（最长4秒兜底生效）"; guestPush(gid,{action:"extend",until:until}); renderGuests(); });
-  });
-}
-function blockGuest(gid){
-  if(!confirm("确定停止该游客的访问？其页面将被立即锁定。"))return;
-  $("guestMsg").textContent="停止中…";
-  loadGuests(function(g){
-    if(g.blocked.indexOf(gid)<0) g.blocked.push(gid);
-    g.grants=g.grants.filter(function(x){return x.gid!==gid});
-    saveGuests(g,function(){
-      $("guestMsg").textContent="已停止该游客，正在实时通知…";
-      guestPush(gid,{action:"stop"},function(ok){ $("guestMsg").textContent="已停止该游客"+(ok?" · ⚡锁定指令已实时送达":" · ⚠实时通道未通，游客将在4秒内轮询生效"); });
-      renderGuests();
-    });
-  });
-}
-function unblockGuest(i){
-  loadGuests(function(g){ g.blocked.splice(i,1); saveGuests(g,function(){ renderGuests(); }); });
-}
-function revokeGuest(i,gid){
-  if(!confirm("撤销后该游客将回落到3分钟试用额度（通常已用完，页面会立即锁定）。确定撤销？"))return;
-  loadGuests(function(g){
-    g.grants.splice(i,1);
-    saveGuests(g,function(){
-      $("guestMsg").textContent="已撤销授权，正在实时通知…";
-      guestPush(gid,{action:"stop"},function(ok){ $("guestMsg").textContent="已撤销授权"+(ok?" · ⚡锁定指令已实时送达":" · 游客将在4秒内回落到期锁定"); });
-      renderGuests();
-    });
-  });
-}
-function revokeGuest(i){
-  loadGuests(function(g){ g.grants.splice(i,1); saveGuests(g,function(){ renderGuests(); }); });
+
 }
 
+function saveGuests(list, cb){
+  if(!ensureToken()){ $("guestMsg").textContent="未设置 GitHub Token，无法保存"; return; }
+
+  var content=btoa(unescape(encodeURIComponent(JSON.stringify(list,null,2))));
+
+  ghPut(GUEST_REPO,GUEST_PATH,"update guests",content,function(ok,st){
+
+    if(ok){ GUESTS=list; cb(); }
+
+    else $("guestMsg").textContent="保存失败 "+(st||"（网络）")+"，请重试";
+
+  });
+
+}
+
+function fmtLocal(iso){
+
+  try{ return new Date(iso).toLocaleString("zh-CN",{hour12:false}); }catch(e){ return iso; }
+
+}
+
+function renderGuests(){
+
+  loadGuests(function(g){
+
+    var tb=$("guestReqs");
+
+    if(!g.requests.length){ tb.innerHTML='<tr><td colspan="5">还没有游客访问</td></tr>'; }
+
+    else{
+
+      tb.innerHTML="";
+
+      g.requests.slice().reverse().forEach(function(r){
+
+        var tr=document.createElement("tr");
+
+        var granted=g.grants.filter(function(x){return x.gid===r.gid}).length>0;
+
+        var blocked=g.blocked.indexOf(r.gid)>=0;
+
+        tr.innerHTML="<td>"+esc(fmtLocal(r.time))+"</td><td>"+esc(r.site||"-")+"</td><td>"+esc(r.name||"匿名")+"</td><td style='font-size:11px;color:#889'>"+esc(r.gid)+"</td>"
+
+          +'<td>'+(blocked?'<span class="badge" style="background:#fee;color:#d33">已停止</span>':(granted?'<span class="badge">已授权</span>':'')
+
+          +'<input type="text" id="gm-'+esc(r.gid)+'" placeholder="分钟" style="width:56px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px"> '
+
+          +'<button class="save" style="padding:4px 10px;font-size:12px" onclick="grantGuest(\''+esc(r.gid)+'\')">延时</button> '
+
+          +'<button class="save" style="padding:4px 10px;font-size:12px;background:#eef2ff;color:#2456c4" onclick="testPush(\''+esc(r.gid)+'\')">测试</button> '
+
+          +'<button class="del" onclick="blockGuest(\''+esc(r.gid)+'\')">停止</button>')+"</td>";
+
+        tb.appendChild(tr);
+
+      });
+
+    }
+
+    var tg=$("grantList");
+
+    if(!g.grants.length){ tg.innerHTML='<tr><td colspan="5">暂无授权</td></tr>'; }
+
+    else{
+
+      tg.innerHTML="";
+
+      g.grants.forEach(function(x,i){
+
+        var tr=document.createElement("tr");
+
+        tr.innerHTML="<td>"+esc(x.site||"-")+"</td><td>"+esc(x.name||"匿名")+"</td><td style='font-size:11px;color:#889'>"+esc(x.gid)+"</td><td>"+esc(fmtLocal(x.until))+"</td>"
+
+          +'<td><button class="del" onclick="revokeGuest('+i+',\''+esc(x.gid)+'\')">撤销</button></td>';
+
+        tg.appendChild(tr);
+
+      });
+
+    }
+
+    var bb=$("blockBox");
+
+    if(g.blocked.length){
+
+      bb.innerHTML="<b style='font-size:13px;color:#d33'>已停止的游客</b><table style='margin-top:6px'><thead><tr><th>页面</th><th>姓名/单位</th><th>访问编号</th><th>操作</th></tr></thead><tbody id='blockRows'></tbody></table>";
+
+      var rows=bb.querySelector("#blockRows");
+
+      g.blocked.forEach(function(gid,i){
+
+        var r0=g.requests.filter(function(x){return x.gid===gid})[0]||{};
+
+        var tr=document.createElement("tr");
+
+        tr.innerHTML="<td>"+esc(r0.site||"-")+"</td><td>"+esc(r0.name||"匿名")+"</td><td style='font-size:11px;color:#889'>"+esc(gid)+"</td>"
+
+          +'<td><button class="save" style="padding:4px 10px;font-size:12px" onclick="unblockGuest('+i+')">解封</button></td>';
+
+        rows.appendChild(tr);
+
+      });
+
+    } else bb.innerHTML="";
+
+  });
+
+}
+
+/* 实时推送：通过EMQX公共通道把指令秒级送到游客页面（失败时回调提示，轮询兜底） */
+
+function guestPush(gid,msg,cb){
+
+  var done=false;
+
+  function fin(ok){ if(done)return; done=true; try{c.end(true)}catch(e){} if(cb)cb(ok); }
+
+  var c=null;
+
+  try{
+
+    if(!window.mqtt){ if(cb)cb(false); return; }
+
+    c=mqtt.connect("wss://broker.emqx.io:8084/mqtt",{clientId:"ac_"+Math.random().toString(36).slice(2,8),connectTimeout:6000,clean:true});
+
+    c.on("connect",function(){
+
+      try{c.publish("phwork/guest/"+gid,JSON.stringify(msg),{qos:1},function(){fin(true)});}catch(e){fin(false)}
+
+      setTimeout(function(){fin(false)},6000);
+
+    });
+
+    c.on("error",function(){ fin(false); });
+
+  }catch(e){ if(cb)cb(false); }
+
+}
+
+function testPush(gid){
+
+  $("guestMsg").textContent="正在向该游客发送测试指令（通道号 "+gid.slice(-6)+"）…";
+
+  guestPush(gid,{action:"ping"},function(ok){
+
+    $("guestMsg").textContent=ok
+
+      ?"⚡测试指令已发出。看游客页面：出现绿色「收到测试指令」=推送链路正常；没出现=游客端没收到，把这种情况截图给我"
+
+      :"⚠连接推送服务器失败（此网络可能拦截了 broker.emqx.io），游客将走4秒轮询兜底";
+
+  });
+
+}
+
+function grantGuest(gid){
+
+  var inp=document.getElementById("gm-"+gid);
+
+  var mins=parseInt(inp?inp.value:"",10);
+
+  if(!mins||mins<=0){ $("guestMsg").textContent="请填写授权分钟数"; return; }
+
+  $("guestMsg").textContent="授权中…";
+
+  loadGuests(function(g){
+
+    var r=g.requests.filter(function(x){return x.gid===gid})[0];
+
+    g.blocked=g.blocked.filter(function(x){return x!==gid});
+
+    var until=new Date(Date.now()+mins*60000).toISOString();
+
+    var exist=g.grants.filter(function(x){return x.gid===gid})[0];
+
+    if(exist){ if(new Date(until)>new Date(exist.until)) exist.until=until; }
+
+    else g.grants.push({gid:gid,name:r?r.name:"",site:r?r.site:"",until:until});
+
+    saveGuests(g,function(){ $("guestMsg").textContent="已授权 "+mins+" 分钟，游客页面已实时通知（最长4秒兜底生效）"; guestPush(gid,{action:"extend",until:until}); renderGuests(); });
+
+  });
+
+}
+
+function blockGuest(gid){
+
+  if(!confirm("确定停止该游客的访问？其页面将被立即锁定。"))return;
+
+  $("guestMsg").textContent="停止中…";
+
+  loadGuests(function(g){
+
+    if(g.blocked.indexOf(gid)<0) g.blocked.push(gid);
+
+    g.grants=g.grants.filter(function(x){return x.gid!==gid});
+
+    saveGuests(g,function(){
+
+      $("guestMsg").textContent="已停止该游客，正在实时通知…";
+
+      guestPush(gid,{action:"stop"},function(ok){ $("guestMsg").textContent="已停止该游客"+(ok?" · ⚡锁定指令已实时送达":" · ⚠实时通道未通，游客将在4秒内轮询生效"); });
+
+      renderGuests();
+
+    });
+
+  });
+
+}
+
+function unblockGuest(i){
+
+  loadGuests(function(g){ g.blocked.splice(i,1); saveGuests(g,function(){ renderGuests(); }); });
+
+}
+
+function revokeGuest(i,gid){
+
+  if(!confirm("撤销后该游客将回落到3分钟试用额度（通常已用完，页面会立即锁定）。确定撤销？"))return;
+
+  loadGuests(function(g){
+
+    g.grants.splice(i,1);
+
+    saveGuests(g,function(){
+
+      $("guestMsg").textContent="已撤销授权，正在实时通知…";
+
+      guestPush(gid,{action:"stop"},function(ok){ $("guestMsg").textContent="已撤销授权"+(ok?" · ⚡锁定指令已实时送达":" · 游客将在4秒内回落到期锁定"); });
+
+      renderGuests();
+
+    });
+
+  });
+
+}
+
+
+
+
 /* ===== 启动（恢复会话） ===== */
+
 try{
+
   if(sessionStorage.getItem(SS)==="1"){
+
     var master=sessionStorage.getItem("console_master")==="1";
+
     var perms={kb:true,muji:true};
+
     try{ perms=JSON.parse(sessionStorage.getItem("console_perms"))||perms }catch(e){}
+
     CUR={user:master?ADMIN_USER:"-",master:master,perms:perms};
+
     enter();
+
   }
+
 }catch(e){}
+
 </script>
+
 </body>
+
 </html>
+
