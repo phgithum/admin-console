@@ -7,13 +7,6 @@
     "quiz": true
   },
   {
-    "u": "test",
-    "p": "test",
-    "kb": false,
-    "muji": false,
-    "quiz": true
-  },
-  {
     "u": "jane",
     "p": "jane123",
     "kb": true,
