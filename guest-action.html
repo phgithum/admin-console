@@ -23,16 +23,11 @@ button.stop{background:#d9534f}
 </div>
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js"></script>
 <script>
-var TOK="ghp_MjkBxQwkydhgmw7TxpItxQrNhtXKsO1sA"+"wRS";
-var API="https://api.github.com/repos/phgithum/cloud-db/contents/guests.json";
-function H(){return{"Authorization":"Bearer "+TOK,"Accept":"application/vnd.github+json","Content-Type":"application/json","User-Agent":"guest-action"}}
-function B64D(s){return decodeURIComponent(escape(atob(s.replace(/\s/g,""))))}
-function B64E(s){return btoa(unescape(encodeURIComponent(s)))}
+var API="https://kvdb.io/Ks73CVNzBmXEcgUhaBfkFd/guests";
 var q={};location.search.replace(/^\?/,"").split("&").forEach(function(kv){var a=kv.split("=");q[a[0]]=decodeURIComponent(a[1]||"")});
 var do_=q.do,gid=q.gid,mins=parseInt(q.mins||"30",10);
 var tt=document.getElementById("tt"),msg=document.getElementById("msg");
 function show(t,cls){msg.innerHTML='<p class="'+(cls||"")+'" style="font-size:15px">'+t+"</p>"}
-/* 菜单模式：下拉选时长 + 保存 */
 if(gid && (q.do==="menu"||!q.do)){
   tt.textContent="处理游客"+(q.name?("「"+q.name+"」"):"");
   msg.innerHTML='<p>选择给 TA 多少使用时间：</p>'
@@ -51,13 +46,13 @@ if(gid && (q.do==="menu"||!q.do)){
     if(v==="stop") run("block",0);
     else run("grant",parseInt(v,10));
   };
-} 
+}
 function run(action,m){
   msg.innerHTML="<p>正在保存…</p>";
-  fetch(API+"?t="+Date.now(),{headers:H()})
-  .then(function(r){if(!r.ok)throw new Error("读取失败 "+r.status);return r.json()})
-  .then(function(j){
-    var list;try{list=JSON.parse(B64D(j.content))||{}}catch(e){list={}}
+  fetch(API+"?t="+Date.now(),{cache:"no-store"})
+  .then(function(r){if(!r.ok)throw new Error("读取失败 "+r.status);return r.text()})
+  .then(function(s){
+    var list;try{list=JSON.parse(s)||{}}catch(e){list={}}
     list.requests=list.requests||[];list.grants=list.grants||[];list.blocked=list.blocked||[];
     var rec=list.requests.filter(function(x){return x.gid===gid})[0]||{};
     if(action==="grant"){
@@ -70,13 +65,13 @@ function run(action,m){
       if(list.blocked.indexOf(gid)<0)list.blocked.push(gid);
       list.grants=list.grants.filter(function(x){return x.gid!==gid});
     }
-    return fetch(API,{method:"PUT",headers:H(),body:JSON.stringify({message:"guest "+action,branch:"main",content:B64E(JSON.stringify(list,null,2)),sha:j.sha})})
+    return fetch(API,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(list)})
       .then(function(r){if(!r.ok)throw new Error("保存失败 "+r.status)});
   })
   .then(function(){
     guestPush(action==="grant"?{action:"extend",until:new Date(Date.now()+m*60000).toISOString()}:{action:"stop"});
-    if(action==="grant"){tt.textContent="✅ 已保存";show("已给「"+(q.name||"游客")+"」延长 "+m+" 分钟<br>已实时通知，最长4秒生效","ok")}
-    else{tt.textContent="⛔ 已停止";show("已停止「"+(q.name||"游客")+"」的访问<br>已实时通知，其页面秒级锁定","ok")}
+    if(action==="grant"){tt.textContent="已保存";show("已给「"+(q.name||"游客")+"」延长 "+m+" 分钟<br>已实时通知，最长4秒生效","ok")}
+    else{tt.textContent="已停止";show("已停止「"+(q.name||"游客")+"」的访问<br>已实时通知，其页面秒级锁定","ok")}
   })
   .catch(function(e){tt.textContent="操作失败";show(e.message+"，请重试","bad")});
 }
